@@ -3,11 +3,10 @@
 # C Compiler Flags:
 CFLAGS=-Os -g -Wextra -Wshadow -Wimplicit-function-declaration -mfloat-abi=hard -mfpu=fpv4-sp-d16
 CFLAGS+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
-CFLAGS+= -fno-common -ffunction-sections -fdata-sections -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
+CFLAGS+= -fno-common -ffunction-sections -fdata-sections
 
 # C Pre-Processor Flags:
-CPPFLAGS= -MD
-CPPFLAGS+= -Wall -Wundef
+CPPFLAGS= -Wall -Wundef
 CPPFLAGS+= -DSTM32F3
 
 # Floating-Point and architecture flags:
@@ -16,8 +15,8 @@ ARCH_FLAGS= -mthumb -mcpu=cortex-m4 $(FP_FLAGS)
 
 # Linker Flags
 LDFLAGS= --static -nostartfiles
-LDFLAGS+= --gc-sections
-LDFLAGS+= 
+LDFLAGS+= -Wl,--gc-sections
+LDFLAGS+= -lc -lgcc -lnosys
 
 export CFLAGS
 export CPPFLAGS
