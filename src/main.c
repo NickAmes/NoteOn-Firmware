@@ -7,9 +7,7 @@
 #include <libopencm3/stm32/gpio.h>
 #include <stdio.h>
 
-#include "peripherals/clock.h"
-#include "peripherals/usart.h"
-#include "peripherals/led.h"
+#include "peripherals/peripherals.h"
 
 /* Setup all peripherals. */
 void init_system(void);
