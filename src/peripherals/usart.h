@@ -10,6 +10,7 @@
 
 /* After initialize the USART with init_usart, use the read() and write()
  * (or stdio functions) to receive and send data.
+ * WARNING: stdio functions that read() currently don't work.
  * These functions will block until the data has been transfered. */
 
 /* Baud rate. Data is transfered at the baud rate with 8 data bit, no parity,
