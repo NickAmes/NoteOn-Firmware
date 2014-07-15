@@ -7,20 +7,20 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/systick.h>
 
+#include <libopencm3/stm32/gpio.h>
+
 /* Systick ISR - called when systick reaches 0. */
 void sys_tick_handler(void)
 {
-	//gpio_toggle(GPIOA, GPIO13);
-	while(1);
+	gpio_toggle(GPIOA, GPIO13);
+	//while(1);
 }
 
 /* Setup the systick timer. */
-void init_systick(void){
-	/* Set the clock source to the system clock / 8. */
-	systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
-	systick_set_reload(1000000);
-	systick_interrupt_enable();
-	nvic_set_priority(NVIC_SYSTICK_IRQ, 0);
-	systick_counter_enable();
+void init_systick(uint32_t period){
+	/* Set the clock source to the system clock. */
+	STK_RVR = period;
+	STK_CVR = 0;
+	STK_CSR = 7;
 }
 	

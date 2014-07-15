@@ -1,23 +1,20 @@
 /* Main program.
- * 
+ *
  * This file is a part of the firmware for the NoteOn Smartpen.
  * Copyright 2014 Nick Ames <nick@fetchmodus.org>. Licensed under the GNU GPLv3.
  * Contains code from the libopencm3 project.                                 */
-#include <libopencm3/stm32/rcc.h>
-#include <libopencm3/stm32/gpio.h>
 #include <stdio.h>
 
 #include "peripherals/peripherals.h"
-#include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/nvic.h>
+#include <libopencm3/cm3/systick.h>
 
 /* Setup all peripherals. */
 void init_system(void);
 
 int main(void){
 	init_system();
-	
-	char c;
+
 	/*while (1) {
 		printf("test\n");
 		led_on();
@@ -28,7 +25,7 @@ int main(void){
 			__asm__("nop");
 	}*/
 	while(1){
-		printf("systick: 0x%08x\n\r", (int) STK_CSR);
+		printf("float: %f\n\r", 1.1 * (float)STK_CSR);
 		for (int i = 0; i < 50000; i++)
 			__asm__("nop");
 	}
@@ -40,5 +37,5 @@ void init_system(void){
 	//clock_64MHz_hsi();
 	init_usart();
 	init_led();
-	init_systick();
+	init_systick(7999);
 }

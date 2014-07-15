@@ -5,8 +5,10 @@
  * Contains code from the libopencm3 and newlib projects.                    */
 #ifndef SYSTICK_H
 #define SYSTICK_H
+#include <stdint.h>
 
-/* Setup the SYSTICK timer. */
-void init_systick(void);
+/* Setup the SYSTICK timer with rollover set to the given period. The systick
+ * clock is the system clock. */
+void init_systick(uint32_t period);
 
 #endif
