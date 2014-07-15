@@ -10,10 +10,8 @@
 #include <libopencm3/stm32/gpio.h>
 
 /* Systick ISR - called when systick reaches 0. */
-void sys_tick_handler(void)
-{
-	gpio_toggle(GPIOA, GPIO13);
-	//while(1);
+void sys_tick_handler(void){
+	
 }
 
 /* Setup the systick timer. */
