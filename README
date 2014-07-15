@@ -1,0 +1,9 @@
+NoteON Smartpen Firmware README
+===============================
+
+Source File Layout
+------------------
+The src/ directory contains the firmware source files. src/peripherals/ contains
+modules providing high-level interfaces to on-chip peripherals, such as the
+I2C and SPI systems. src/board/ contains modules providing high-level
+interfaces to other ICs on the PCB, such as the IMU and bluetooth controller.
