@@ -9,28 +9,30 @@
 
 #include "peripherals/clock.h"
 #include "peripherals/usart.h"
+#include "peripherals/led.h"
 
 /* Setup all peripherals. */
-void init_system();
+void init_system(void);
 
 int main(void){
-	int i;
 	init_system();
-	rcc_periph_clock_enable(RCC_GPIOA);
-	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
+	
 	char c;
-	_read(0, &c, 1);
 	while (1) {
 		printf("test\n");
-		gpio_toggle(GPIOA, GPIO13);
-		for (i = 0; i < 1000000; i++)
+		led_on();
+		for (int i = 0; i < 500000; i++)
+			__asm__("nop");
+		led_off();
+		for (int i = 0; i < 500000; i++)
 			__asm__("nop");
 	}
 }
 
 /* Setup all peripherals. */
-void init_system(){
+void init_system(void){
 	/* It appears that the PLL is horrifically inaccurate. */
 	//clock_64MHz_hsi();
 	init_usart();
+	init_led();
 }

@@ -10,7 +10,6 @@
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/gpio.h>
 #include <stdint.h>
-
 static uint8_t UsartEnabled = 0;
 
 /* Initialize USART1. This function sets the baud rate based on the current clock

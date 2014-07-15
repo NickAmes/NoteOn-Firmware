@@ -2,7 +2,7 @@
 # Options:
 # C Compiler Flags:
 CFLAGS=-O2 -g -Wextra -Wshadow -Wimplicit-function-declaration -mfloat-abi=hard -mfpu=fpv4-sp-d16
-CFLAGS+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
+CFLAGS+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes -std=gnu99
 CFLAGS+= -fno-common -ffunction-sections -fdata-sections
 
 # C Pre-Processor Flags:

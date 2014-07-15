@@ -1,6 +1,6 @@
 OUTFILE:=../build/smartpen
 
-OBJFILES:= peripherals/usart.o peripherals/newlib_stubs.o peripherals/clock.o
+OBJFILES:= peripherals/usart.o peripherals/newlib_stubs.o peripherals/clock.o peripherals/led.o
 
 all: main.c $(OBJFILES)
 	$(Q)$(CC) main.c $(OBJFILES) ../$(LIBOPENCM3).a -T ../$(LDSCRIPT) -o $(OUTFILE).elf $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
@@ -17,7 +17,9 @@ peripherals/newlib_stubs.o: peripherals/newlib_stubs.c
 peripherals/clock.o: peripherals/clock.c peripherals/clock.h
 	$(Q)$(CC) -c peripherals/clock.c -o peripherals/clock.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
 
-
+peripherals/led.o: peripherals/led.c peripherals/led.h
+	$(Q)$(CC) -c peripherals/led.c -o peripherals/led.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
+	
 clean:
 	rm -f *.o
 	rm -f peripherals/*.o
