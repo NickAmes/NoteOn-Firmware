@@ -2,12 +2,11 @@ OUTFILE:=../build/smartpen
 
 OBJFILES:= peripherals/usart.o peripherals/newlib_stubs.o peripherals/clock.o
 
-.PHONY: flash
-
-all: flash main.c $(OBJFILES)
+all: main.c $(OBJFILES)
 	$(Q)$(CC) main.c $(OBJFILES) ../$(LIBOPENCM3).a -T ../$(LDSCRIPT) -o $(OUTFILE).elf $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
 	$(Q)$(OBJCOPY) -O ihex $(OUTFILE).elf $(OUTFILE).hex
 	$(Q)$(SIZE) $(OUTFILE).elf
+	$(Q)$(STM32FLASH) -w $(OUTFILE).hex -g 0x0 -v $(FLASHTTY)
 
 peripherals/usart.o: peripherals/usart.c peripherals/usart.h
 	$(Q)$(CC) -c peripherals/usart.c -o peripherals/usart.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
@@ -18,8 +17,6 @@ peripherals/newlib_stubs.o: peripherals/newlib_stubs.c
 peripherals/clock.o: peripherals/clock.c peripherals/clock.h
 	$(Q)$(CC) -c peripherals/clock.c -o peripherals/clock.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
 
-flash:
-	$(Q)$(STM32FLASH) -w $(OUTFILE).hex -g 0x0 -v $(FLASHTTY)
 
 clean:
 	rm -f *.o
