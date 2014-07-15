@@ -16,7 +16,7 @@ ARCH_FLAGS= -mthumb -mcpu=cortex-m4 $(FP_FLAGS)
 # Linker Flags
 LDFLAGS= --static -nostartfiles
 LDFLAGS+= -Wl,--gc-sections
-LDFLAGS+= -lc -lgcc -lnosys
+LDFLAGS+= -lc -lgcc
 
 export CFLAGS
 export CPPFLAGS
@@ -37,7 +37,11 @@ export LD:= arm-none-eabi-ld
 export OBJCOPY:= arm-none-eabi-objcopy
 export OBJDUMP:= arm-none-eabi-objdump
 export SIZE:=arm-none-eabi-size
+export STM32FLASH:=stm32flash
 MAKE:= make
+
+# UART Bootloader flashing port
+export FLASHTTY:=/dev/ttyUSB0
 
 # Used to suppress printing of command
 Q := @
