@@ -6,8 +6,6 @@
 #include <stdio.h>
 
 #include "peripherals/peripherals.h"
-#include <libopencm3/cm3/nvic.h>
-#include <libopencm3/cm3/systick.h>
 
 /* Setup all peripherals. */
 void init_system(void);
@@ -24,11 +22,11 @@ int main(void){
 		for (int i = 0; i < 500000; i++)
 			__asm__("nop");
 	}*/
-	while(1){
-		printf("float: %f\n\r", 1.1 * (float)STK_CSR);
-		for (int i = 0; i < 50000; i++)
-			__asm__("nop");
-	}
+// 	while(1){
+// 		printf("float: %f\n\r", 1.1 * (float)STK_CSR);
+// 		for (int i = 0; i < 50000; i++)
+// 			__asm__("nop");
+// 	}
 }
 
 /* Setup all peripherals. */
