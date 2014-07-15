@@ -1,7 +1,7 @@
 # Smart Pen firmware Makefile
 # Options:
 # C Compiler Flags:
-CFLAGS=-Os -g -Wextra -Wshadow -Wimplicit-function-declaration -mfloat-abi=hard -mfpu=fpv4-sp-d16
+CFLAGS=-O2 -g -Wextra -Wshadow -Wimplicit-function-declaration -mfloat-abi=hard -mfpu=fpv4-sp-d16
 CFLAGS+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
 CFLAGS+= -fno-common -ffunction-sections -fdata-sections
 
@@ -36,6 +36,7 @@ export CC:= arm-none-eabi-gcc
 export LD:= arm-none-eabi-ld
 export OBJCOPY:= arm-none-eabi-objcopy
 export OBJDUMP:= arm-none-eabi-objdump
+export SIZE:=arm-none-eabi-size
 MAKE:= make
 
 # Used to suppress printing of command
