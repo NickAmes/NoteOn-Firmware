@@ -8,6 +8,8 @@
 #include <stdio.h>
 
 #include "peripherals/peripherals.h"
+#include <libopencm3/cm3/systick.h>
+#include <libopencm3/cm3/nvic.h>
 
 /* Setup all peripherals. */
 void init_system(void);
@@ -16,13 +18,18 @@ int main(void){
 	init_system();
 	
 	char c;
-	while (1) {
+	/*while (1) {
 		printf("test\n");
 		led_on();
 		for (int i = 0; i < 500000; i++)
 			__asm__("nop");
 		led_off();
 		for (int i = 0; i < 500000; i++)
+			__asm__("nop");
+	}*/
+	while(1){
+		printf("systick: 0x%08x\n\r", (int) STK_CSR);
+		for (int i = 0; i < 50000; i++)
 			__asm__("nop");
 	}
 }
@@ -33,4 +40,5 @@ void init_system(void){
 	//clock_64MHz_hsi();
 	init_usart();
 	init_led();
+	init_systick();
 }
