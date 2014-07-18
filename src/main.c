@@ -4,8 +4,9 @@
  * Copyright 2014 Nick Ames <nick@fetchmodus.org>. Licensed under the GNU GPLv3.
  * Contains code from the libopencm3 project.                                 */
 #include <stdio.h>
-#include "peripherals/peripherals.h"
 #include <libopencm3/cm3/scb.h>
+#include "peripherals/peripherals.h"
+#include "board/board.h"
 
 /* Setup all peripherals. */
 void init_system(void);
