@@ -6,19 +6,26 @@
 #include "systick.h"
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/systick.h>
+#include <libopencm3/cm3/scb.h>
 
-#include <libopencm3/stm32/gpio.h>
+/* System Timer. Contains number of milliseconds elapsed since the SysTick
+ * timer was started. */
+volatile uint32_t SystemTime;
 
-/* Systick ISR - called when systick reaches 0. */
+/* Systick ISR - called when SysTick reaches 0. */
 void sys_tick_handler(void){
-	
+	SystemTime++;
 }
 
-/* Setup the systick timer. */
+/* Setup the SysTick timer with the given number of cycles per period. The SysTick
+ * clock is the system clock. The appropriate period depends on the current
+ * system clock, but should be set so that the SysTick interrupt fires every
+ * millisecond. */
 void init_systick(uint32_t period){
-	/* Set the clock source to the system clock. */
-	STK_RVR = period;
+	STK_RVR = period - 1; /* Systick counts from 0. */
 	STK_CVR = 0;
+	/* Enable the SysTick interrupt and set the clock source
+	 *to the system clock. */
 	STK_CSR = 7;
 }
 	

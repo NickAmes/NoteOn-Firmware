@@ -7,8 +7,15 @@
 #define SYSTICK_H
 #include <stdint.h>
 
-/* Setup the SYSTICK timer with rollover set to the given period. The systick
- * clock is the system clock. */
+/* System Timer. Contains number of milliseconds elapsed since the SysTick
+ * timer was started. */
+extern volatile uint32_t SystemTime;
+
+
+/* Setup the SysTick timer with the given number of cycles per period. The SysTick
+ * clock is the system clock. The appropriate period depends on the current
+ * system clock, but should be set so that the SysTick interrupt fires every
+ * millisecond. */
 void init_systick(uint32_t period);
 
 #endif
