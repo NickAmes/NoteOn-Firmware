@@ -8,7 +8,9 @@
 #include <stdint.h>
 
 /* System Timer. Contains number of milliseconds elapsed since the SysTick
- * timer was started. */
+ * timer was started.
+ * NOTE: This variable will overflow and wrap around after 49.7 days of
+ * continuous operation. */
 extern volatile uint32_t SystemTime;
 
 

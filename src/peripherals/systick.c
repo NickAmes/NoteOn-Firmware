@@ -9,7 +9,9 @@
 #include <libopencm3/cm3/scb.h>
 
 /* System Timer. Contains number of milliseconds elapsed since the SysTick
- * timer was started. */
+ * timer was started.
+ * NOTE: This variable will overflow and wrap around after 49.7 days of
+ * continuous operation. */
 volatile uint32_t SystemTime;
 
 /* Systick ISR - called when SysTick reaches 0. */
