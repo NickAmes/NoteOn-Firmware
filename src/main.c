@@ -25,6 +25,7 @@ int main(void){
 // 	}
 	while(1){
 		printf("Hello, World!  0x%08X \n\r", (int) SystemTime);
+		//printf("H\n");
 		for (int i = 0; i < 100000; i++)
 			__asm__("nop");
 	}
@@ -37,8 +38,8 @@ void init_system(void){
 	SCB_VTOR = 0x08000000; /* Set vector table location. (Makes interrupts work.) */
 
 	/* Setup peripherals. */
-	init_systick(8000);
-	//clock_72MHz_hse();
+	clock_72MHz_hse();
+	init_systick(72000);
 	init_usart();
 	init_led();
 	

@@ -6,6 +6,7 @@
  * Copyright 2014 Nick Ames <nick@fetchmodus.org>. Licensed under the GNU GPLv3.
  * Contains code from the libopencm3 project.                                 */
 #include "usart.h"
+#include "clock.h"
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/gpio.h>
@@ -24,8 +25,18 @@ void init_usart(void){
 	/* See page 42-43 of the STM32F302x6/x8 datasheet. */
 	gpio_set_af(GPIOA, GPIO_AF7, GPIO9);
 	gpio_set_af(GPIOA, GPIO_AF7, GPIO10);
-	
-	usart_set_baudrate(USART1, USART_BAUD);
+
+	/* Due to a silicon bug in the revision Z STM32F302x6/x8 chips
+	 * (documented on page 10 in the errata sheet DocID025990 Rev 2),
+	 * the default USART1 clock source is the APB1. This prevents the
+	 * default baud setting function from working when the APB1 and APB2
+	 * clocks are different.
+	 * To get around the bug the USART1 clock source is set to the
+	 * system clock, allowing the calculation to work even on devices
+	 * where the bug isn't present. */
+	RCC_CFGR3 &= ~0x00000003;
+	RCC_CFGR3 |= RCC_CFGR3_UART1SW_SYSCLK;
+	USART_BRR(USART1) = ((2 * SystemClock) + USART_BAUD) / (2 * USART_BAUD);
 	usart_set_databits(USART1, 8);
 	usart_set_stopbits(USART1, USART_STOPBITS_1);
 	usart_set_mode(USART1, USART_MODE_TX_RX);
