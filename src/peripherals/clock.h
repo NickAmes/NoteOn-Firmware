@@ -5,6 +5,11 @@
  * Contains code from the libopencm3 project.                                 */
 #ifndef CLOCK_H
 #define CLOCK_H
+#include <stdint.h>
+
+/* Current system clock frequency, in Hz. Libopencm3 doesn't seem to have a
+ * variable for this. */
+extern volatile uint32_t SystemClock;
 
 /* Set the system clock for 72Mhz derived from an external 16Mhz crystal.
  * The APB high-speed clock will be set to 72Mhz, the APB low-speed clock

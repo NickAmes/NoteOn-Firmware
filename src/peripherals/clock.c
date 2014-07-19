@@ -7,11 +7,35 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/flash.h>
 
+/* Default system clock is 8Mhz. */
+volatile uint32_t SystemClock = 8000000;
+
 /* Set the system clock for 72Mhz derived from an external 16Mhz crystal.
  * The APB high-speed clock will be set to 72Mhz, the APB low-speed clock
  *  to 36Mhz, and the USB clock to 48Mhz. */
 void clock_72MHz_hse(void){
+	rcc_osc_on(HSE);
+	rcc_wait_for_osc_ready(HSE);
 
+	rcc_osc_off(PLL);
+	rcc_wait_for_osc_not_ready(PLL);
+	rcc_set_pll_source(RCC_CFGR_PLLSRC_HSE_PREDIV);
+	rcc_set_main_pll_hsi(RCC_CFGR_PLLMUL_PLL_IN_CLK_X9);
+	rcc_usb_prescale_1_5();
+	RCC_CFGR |= RCC_CFGR_PLLXTPRE; /* Divide HSE by 2 before PLL. */
+	rcc_set_ppre2(RCC_CFGR_PPRE2_DIV_NONE);
+	rcc_set_ppre1(RCC_CFGR_PPRE1_DIV_2);
+	rcc_set_hpre(RCC_CFGR_HPRE_DIV_NONE);
+	rcc_osc_on(PLL);
+	rcc_wait_for_osc_ready(PLL);
+
+	flash_set_ws(FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY_2WS);
+	rcc_set_sysclk_source(RCC_CFGR_SW_PLL);
+	rcc_wait_for_sysclk_status(PLL);
+
+	rcc_ppre1_frequency = 36000000;
+	rcc_ppre2_frequency = 72000000;
+	SystemClock = 72000000;
 }
 
 /* Set the system clock for 64Mhz derived from the internal 8MHz oscillator.
@@ -31,4 +55,5 @@ void clock_64MHz_hsi(void){
 	.apb2_frequency = 64000000,
 	};
 	rcc_clock_setup_hsi(&clock);
+	SystemClock = 64000000;
 }
