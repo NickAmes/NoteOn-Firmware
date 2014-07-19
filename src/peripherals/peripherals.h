@@ -9,5 +9,6 @@
 #include "clock.h"
 #include "systick.h"
 #include "usart.h"
+#include "i2c.h"
 
 #endif

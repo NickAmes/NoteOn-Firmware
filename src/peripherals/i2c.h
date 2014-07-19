@@ -6,9 +6,10 @@
  * Contains code from the libopencm3 project.                              */
 #ifndef I2C_H
 #define I2C_H
+#include <stdint.h>
 
 /* If !0, the I2C peripheral is enabled. */
-extern int I2CEnabled;
+extern volatile uint8_t I2CEnabled;
 
 /* Setup the I2C1 peripheral. */
 void init_i2c(void);

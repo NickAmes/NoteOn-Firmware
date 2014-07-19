@@ -10,7 +10,7 @@
 #include <libopencm3/stm32/rcc.h>
 
 /* If !0, the I2C peripheral is enabled. */
-int I2CEnabled;
+volatile uint8_t I2CEnabled;
 
 /* Setup the I2C1 peripheral. */
 void init_i2c(void){
@@ -33,10 +33,12 @@ void init_i2c(void){
 	i2c_set_data_setup_time(I2C1, 0x3);
 
 	i2c_peripheral_enable(I2C1);
+	I2CEnabled = 1;
 }
 
 /* Shutdown the I2C1 peripheral to save power. */
 void shutdown_i2c(void){
 	i2c_peripheral_disable(I2C1);
 	rcc_periph_clock_disable(RCC_I2C1);
+	I2CEnabled = 0;
 }

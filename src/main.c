@@ -7,18 +7,15 @@
 #include <libopencm3/cm3/scb.h>
 #include "peripherals/peripherals.h"
 #include "board/board.h"
+#include <libopencm3/stm32/i2c.h>
+#include <stdbool.h>
 
 /* Setup all peripherals. */
 void init_system(void);
 
 int main(void){
 	init_system();
-
-
-	while(1){
-		if(top_switch_pressed())led_on();
-		else led_off();
-	}
+	
 // 	while (1) {
 // 		//printf("test\n");
 // 		led_on();
@@ -28,12 +25,17 @@ int main(void){
 // 		for (int i = 0; i < 500000; i++)
 // 			__asm__("nop");
 // 	}
-// 	while(1){
-// 		printf("Hello, World!  0x%08X \n\r", (int) SystemTime);
-// 		//printf("H\n");
-// 		for (int i = 0; i < 1000000; i++)
-// 			__asm__("nop");
-// 	}
+	uint8_t data;
+	/* REG_MODE register. */
+	data = 0b00010001; /* Operating mode, alarms disabled, voltage only. */
+	write_i2c(I2C1, 0x70, 0, 1, &data);
+	while(1){
+		read_i2c(I2C1, 0x70, 19, 1, &data);
+		iprintf("I2C: %d\n\r", (int) data);
+		//printf("H\n");
+		for (int i = 0; i < 1000000; i++)
+			__asm__("nop");
+	}
 }
 
 /* Setup all peripherals. */
@@ -50,5 +52,6 @@ void init_system(void){
 	init_usart();
 	init_led();
 	init_switches();
+	init_i2c();
 	
 }
