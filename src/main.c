@@ -14,6 +14,11 @@ void init_system(void);
 int main(void){
 	init_system();
 
+
+	while(1){
+		if(top_switch_pressed())led_on();
+		else led_off();
+	}
 // 	while (1) {
 // 		//printf("test\n");
 // 		led_on();
@@ -23,12 +28,12 @@ int main(void){
 // 		for (int i = 0; i < 500000; i++)
 // 			__asm__("nop");
 // 	}
-	while(1){
-		printf("Hello, World!  0x%08X \n\r", (int) SystemTime);
-		//printf("H\n");
-		for (int i = 0; i < 100000; i++)
-			__asm__("nop");
-	}
+// 	while(1){
+// 		printf("Hello, World!  0x%08X \n\r", (int) SystemTime);
+// 		//printf("H\n");
+// 		for (int i = 0; i < 1000000; i++)
+// 			__asm__("nop");
+// 	}
 }
 
 /* Setup all peripherals. */
@@ -36,11 +41,14 @@ void init_system(void){
 	/* Misc. important setup tasks. */
 	SCB_CPACR |= ((3UL << 10*2)|(3UL << 11*2)); /* Enable FPU */
 	SCB_VTOR = 0x08000000; /* Set vector table location. (Makes interrupts work.) */
+	SCB_AIRCR = 0x05FA0300; /* Set 16 interrupt group priorities and 0 sub
+	                         * priorities. */
 
 	/* Setup peripherals. */
 	clock_72MHz_hse();
 	init_systick();
 	init_usart();
 	init_led();
+	init_switches();
 	
 }

@@ -1,6 +1,7 @@
 OUTFILE:=../build/smartpen
 
 OBJFILES:= peripherals/usart.o peripherals/newlib_stubs.o peripherals/clock.o board/led.o peripherals/systick.o peripherals/i2c.o
+OBJFILES+= board/switches.o
 
 all: main.c $(OBJFILES)
 	$(Q)$(CC) main.c $(OBJFILES) ../$(LIBOPENCM3).a -T ../$(LDSCRIPT) -o $(OUTFILE).elf $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
@@ -19,6 +20,9 @@ peripherals/clock.o: peripherals/clock.c peripherals/clock.h
 
 board/led.o: board/led.c board/led.h
 	$(Q)$(CC) -c board/led.c -o board/led.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
+
+board/switches.o: board/switches.c board/switches.h
+	$(Q)$(CC) -c board/switches.c -o board/switches.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
 
 peripherals/systick.o: peripherals/systick.c peripherals/systick.h
 	$(Q)$(CC) -c peripherals/systick.c -o peripherals/systick.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)

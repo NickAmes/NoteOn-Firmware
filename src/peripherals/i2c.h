@@ -7,6 +7,14 @@
 #ifndef I2C_H
 #define I2C_H
 
+/* If !0, the I2C peripheral is enabled. */
+extern int I2CEnabled;
+
+/* Setup the I2C1 peripheral. */
+void init_i2c(void);
+
+/* Shutdown the I2C1 peripheral to save power. */
+void shutdown_i2c(void);
 
 
 

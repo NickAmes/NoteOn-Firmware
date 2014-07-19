@@ -7,5 +7,6 @@
 #define PERIPHERALS_H
 
 #include "led.h"
+#include "switches.h"
 
 #endif 
