@@ -1,9 +1,10 @@
 OUTFILE:=../build/smartpen
-
-OBJFILES:= peripherals/usart.o peripherals/newlib_stubs.o peripherals/clock.o board/led.o peripherals/systick.o peripherals/i2c.o
-OBJFILES+= board/switches.o
+OUTDIR:=../build/
+OBJFILES:= peripherals/usart.o peripherals/newlib_stubs.o peripherals/clock.o  peripherals/systick.o peripherals/i2c.o
+OBJFILES+= board/switches.o board/led.o
 
 all: main.c $(OBJFILES)
+	$(Q)mkdir -p ../build/ 
 	$(Q)$(CC) main.c $(OBJFILES) ../$(LIBOPENCM3).a -T ../$(LDSCRIPT) -o $(OUTFILE).elf $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
 	$(Q)$(OBJCOPY) -O ihex $(OUTFILE).elf $(OUTFILE).hex
 	$(Q)$(SIZE) $(OUTFILE).elf
