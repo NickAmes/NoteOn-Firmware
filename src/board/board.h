@@ -6,8 +6,6 @@
 #ifndef PERIPHERALS_H
 #define PERIPHERALS_H
 
-#include "clock.h"
-#include "systick.h"
-#include "usart.h"
+#include "led.h"
 
 #endif 

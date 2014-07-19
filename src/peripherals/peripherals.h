@@ -6,6 +6,8 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#include "led.h"
+#include "clock.h"
+#include "systick.h"
+#include "usart.h"
 
 #endif
