@@ -14,10 +14,9 @@
 extern volatile uint32_t SystemTime;
 
 
-/* Setup the SysTick timer with the given number of cycles per period. The SysTick
- * clock is the system clock. The appropriate period depends on the current
- * system clock, but should be set so that the SysTick interrupt fires every
- * millisecond. */
-void init_systick(uint32_t period);
+/* Setup the SysTick timer so that it fires every millisecond.
+ * This function depends on the current system clock. It should be called
+ * whenever the system clock changes. */
+void init_systick(void);
 
 #endif

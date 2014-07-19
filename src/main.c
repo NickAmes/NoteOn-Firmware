@@ -39,7 +39,7 @@ void init_system(void){
 
 	/* Setup peripherals. */
 	clock_72MHz_hse();
-	init_systick(72000);
+	init_systick();
 	init_usart();
 	init_led();
 	
