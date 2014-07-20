@@ -25,16 +25,19 @@ int main(void){
 // 		for (int i = 0; i < 500000; i++)
 // 			__asm__("nop");
 // 	}
-	uint8_t data;
-	/* REG_MODE register. */
-	data = 0b00010001; /* Operating mode, alarms disabled, voltage only. */
-	write_i2c(I2C1, 0x70, 0, 1, &data);
+	uint8_t data[2];
+	uint16_t voltage;
 	while(1){
-		read_i2c(I2C1, 0x70, 19, 1, &data);
-		iprintf("I2C: %d\n\r", (int) data);
-		//printf("H\n");
-		for (int i = 0; i < 1000000; i++)
+		data[0] = 0b00010000; /* Soft reset. */
+		write_i2c(I2C1, 0x70, 1, 1, data);
+		data[0] = 0b00010001; /* Operating mode, alarms disabled, voltage only. */
+		write_i2c(I2C1, 0x70, 0, 1, data);
+		for (int i = 0; i < 10000000; i++)
 			__asm__("nop");
+		read_i2c(I2C1, 0x70, 8, 1, &data[0]);
+		read_i2c(I2C1, 0x70, 9, 1, &data[1]);
+		voltage = data[0] | (data[1] << 8);
+		iprintf("I2C: %hd\n\r", voltage);
 	}
 }
 

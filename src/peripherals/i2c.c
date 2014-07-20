@@ -10,7 +10,25 @@
 #include <libopencm3/stm32/rcc.h>
 
 /* If !0, the I2C peripheral is enabled. */
-volatile uint8_t I2CEnabled;
+static volatile uint8_t I2CEnabled;
+
+/* Conveyor. */
+static volatile i2c_ticket_t Conveyor[I2C_CONVEYOR_SIZE];
+
+/* Add a ticket to the conveyor. The ticket will be copied (and therefore
+ * doesn't need to exist after the function call) but the data will not.
+ * Returns:
+ *   0 - Success.
+ *  -1 - NULL data field or ticket pointer.
+ *  -2 - Conveyor is full. Please try again later. */
+int add_ticket_i2c(i2c_ticket_t *ticket){
+	if(0 == ticket)return -1;
+	if(0 == ticket->data)return -1;
+	if(0 == I2CEnabled)init_i2c();
+
+	
+}
+
 
 /* Setup the I2C1 peripheral. */
 void init_i2c(void){

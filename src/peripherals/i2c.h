@@ -8,8 +8,35 @@
 #define I2C_H
 #include <stdint.h>
 
-/* If !0, the I2C peripheral is enabled. */
-extern volatile uint8_t I2CEnabled;
+/* The I2C system works using a "conveyor" which automatically performs data
+ * transfers. Device drivers place "tickets" on the conveyor. The tickets are
+ * processed in the order they are received. A flag is set as each ticket is
+ * completed. Device drivers poll this flag to know when their data has been
+ * transfered. */
+
+/* Ticket structure. */
+typedef struct i2c_ticket_t {
+	enum {I2C_WRITE, I2C_READ} rw;
+	uint8_t device_addr;
+	uint8_t reg;
+	uint8_t *data; /* Data to be transferred - this must not be NULL. */
+	uint16_t num_data;
+
+	uint8_t *done_flag; /* The flag will be set to 1 when the transaction is
+	                     * complete, or to 2 if an error occurs. This field
+			     * may be NULL. */
+} i2c_ticket_t;
+
+/* Number of tickets that the conveyor can hold. */
+#define I2C_CONVEYOR_SIZE 4
+
+/* Add a ticket to the conveyor. The ticket will be copied (and therefore
+ * doesn't need to exist after the function call) but the data will not.
+ * Returns:
+ *   0 - Success.
+ *  -1 - NULL data field or ticket pointer.
+ *  -2 - Conveyor is full. Please try again later. */
+int add_ticket_i2c(i2c_ticket_t *ticket);
 
 /* Setup the I2C1 peripheral. */
 void init_i2c(void);
