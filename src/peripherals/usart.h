@@ -34,4 +34,8 @@ int _read(int file, char *ptr, int len);
 /* Newlib write() stub. */
 int _write(int file, char *ptr, int len);
 
+/* Write a string to the usart. This function avoids including newlib's bulky
+ * stdio. */
+void write_str(const char *str);
+
 #endif

@@ -89,3 +89,15 @@ int _write(int file, char *ptr, int len){
 	}
 	file=file; /* Suppresses unused parameter warnings. */
 }
+
+/* Write a string to the usart. This function avoids including newlib's bulky
+ * stdio. */
+void write_str(const char *str){
+	if(!UsartEnabled){
+		init_usart();
+	}
+	while('0' != *str){
+		usart_send_blocking(USART1, *str);
+		str++;
+	}
+}
