@@ -23,7 +23,26 @@ int main(void){
 	write_i2c(I2C1, 0x1E, 0x20, 1, data); /* Initialize Aux. Accelerometer. */
 	data[0] = 0x10;
 	write_i2c(I2C1, 0x1E, 0x25, 1, data); /* Set ADD_INC bit. */
+	iprintf("start\n\r"); /* Lets the computer's usart synchronize. */
+	delay_ms(100);
 	led_on();
+	iprintf("Press 's' initiate a self-test routine on the aux. accelerometer.\r\n");
+	_read(0, data, 1);
+	if('s' == data[0]){
+		led_off();
+		iprintf("Running self-test...\n\r");
+		data[0] = 0x02;  /* Positive sign. */
+		write_i2c(I2C1, 0x1E, 0x24, 1, data);
+		delay_ms(100);
+		data[0] = 0x04;  /* Negative sign. */
+		write_i2c(I2C1, 0x1E, 0x24, 1, data);
+		delay_ms(100);
+		led_on();
+		iprintf("Self test complete.\n\r");
+
+	} else {
+		iprintf("Self-test canceled.\n\r");
+	}
 	delay_ms(100);
 	while(1){
 		read_i2c(I2C1, 0x1E, 0x28, 1, &data[0]);
