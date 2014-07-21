@@ -20,7 +20,7 @@ typedef struct i2c_ticket_t {
 	uint8_t device_addr;
 	uint8_t reg;
 	uint8_t *data; /* Data to be transferred - this must not be NULL. */
-	uint16_t num_data;
+	uint8_t num_data; /* Number of bytes to be transferred. */
 
 	uint8_t *done_flag; /* The flag will be set to 1 when the transaction is
 	                     * complete, or to 2 if an error occurs. This field
@@ -30,8 +30,12 @@ typedef struct i2c_ticket_t {
 /* Number of tickets that the conveyor can hold. */
 #define I2C_CONVEYOR_SIZE 4
 
+/* Priority of I2C interrupts. */
+#define I2C_IRQ_PRIORITY 8
+
 /* Add a ticket to the conveyor. The ticket will be copied (and therefore
  * doesn't need to exist after the function call) but the data will not.
+ * This function may be called from an interrupt.
  * Returns:
  *   0 - Success.
  *  -1 - NULL data field or ticket pointer.

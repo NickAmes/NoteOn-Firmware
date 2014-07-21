@@ -4,41 +4,56 @@
  * Copyright 2014 Nick Ames <nick@fetchmodus.org>. Licensed under the GNU GPLv3.
  * Contains code from the libopencm3 project.                                 */
 #include <stdio.h>
+#include <stdbool.h>
 #include <libopencm3/cm3/scb.h>
+#include <libopencm3/stm32/i2c.h>
 #include "peripherals/peripherals.h"
 #include "board/board.h"
-#include <libopencm3/stm32/i2c.h>
-#include <stdbool.h>
+
+#include <libopencm3/cm3/nvic.h>
 
 /* Setup all peripherals. */
 void init_system(void);
 
 int main(void){
 	init_system();
-	
-// 	while (1) {
-// 		//printf("test\n");
-// 		led_on();
-// 		for (int i = 0; i < 500000; i++)
-// 			__asm__("nop");
-// 		led_off();
-// 		for (int i = 0; i < 500000; i++)
-// 			__asm__("nop");
-// 	}
-	uint8_t data[2];
-	uint16_t voltage;
+
+	uint8_t data[6];
+	int16_t x, y, z;
+	data[0] = 0x67;
+	write_i2c(I2C1, 0x1D, 0x20, 1, data); /* Initialize Aux. Accelerometer. */
+	led_on();
+	data[0] = 0x10;
+	write_i2c(I2C1, 0x1D, 0x25, 1, data); /* Set ADD_INC. */
+	delay_ms(100);
 	while(1){
-		data[0] = 0b00010000; /* Soft reset. */
-		write_i2c(I2C1, 0x70, 1, 1, data);
-		data[0] = 0b00010001; /* Operating mode, alarms disabled, voltage only. */
-		write_i2c(I2C1, 0x70, 0, 1, data);
-		for (int i = 0; i < 10000000; i++)
-			__asm__("nop");
-		read_i2c(I2C1, 0x70, 8, 1, &data[0]);
-		read_i2c(I2C1, 0x70, 9, 1, &data[1]);
-		voltage = data[0] | (data[1] << 8);
-		iprintf("I2C: %hd\n\r", voltage);
+		read_i2c(I2C1, 0x1D, 0x27, 1, data); /* Read STATUS register. */
+		if(data[0] & (1 << 3)){ /* If data is available */
+			read_i2c(I2C1, 0x1D, 0x28, 1, &data[0]);
+			read_i2c(I2C1, 0x1D, 0x29, 1, &data[1]);
+			read_i2c(I2C1, 0x1D, 0x2A, 1, &data[2]);
+			read_i2c(I2C1, 0x1D, 0x2B, 1, &data[3]);
+			read_i2c(I2C1, 0x1D, 0x2C, 1, &data[4]);
+			read_i2c(I2C1, 0x1D, 0x2D, 1, &data[5]);
+			iprintf("XL: %3hhd %3hhd   YL: %3hhd %3hhd   Z: %3hhd %3hhd\n\r", data[0], data[1], data[2], data[3], data[4], data[5]);
+			delay_ms(200);
+		}
 	}
+
+// 	uint8_t data[2];
+// 	uint16_t voltage;
+// 	while(1){
+// 		data[0] = 0b00010000; /* Soft reset. */
+// 		write_i2c(I2C1, 0x70, 1, 1, data);
+// 		data[0] = 0b00010001; /* Operating mode, alarms disabled, voltage only. */
+// 		write_i2c(I2C1, 0x70, 0, 1, data);
+// 		for (int i = 0; i < 10000000; i++)
+// 			__asm__("nop");
+// 		read_i2c(I2C1, 0x70, 8, 1, &data[0]);
+// 		read_i2c(I2C1, 0x70, 9, 1, &data[1]);
+// 		voltage = data[0] | (data[1] << 8);
+// 		printf("I2C: %f\n\r", (float) voltage * 2.2e-3);
+// 	}
 }
 
 /* Setup all peripherals. */
