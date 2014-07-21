@@ -11,7 +11,9 @@
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/gpio.h>
 #include <stdint.h>
-static uint8_t UsartEnabled = 0;
+#include <stdbool.h>
+
+static bool UsartEnabled = 0;
 
 /* Initialize USART1. This function sets the baud rate based on the current clock
  * frequency. If the clock is changed this function must be called again. */
@@ -44,7 +46,7 @@ void init_usart(void){
 	usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
 	
 	usart_enable(USART1);
-	UsartEnabled = 1;
+	UsartEnabled = true;
 }
 
 /* Shutdown USART1 to save power.
@@ -55,7 +57,7 @@ void init_usart(void){
 void shutdown_usart(void){
 	rcc_periph_clock_disable(RCC_USART1);
 	usart_disable(USART1);
-	UsartEnabled = 0;
+	UsartEnabled = false;
 }
 
 /* Newlib read() stub. */
