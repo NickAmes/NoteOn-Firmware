@@ -50,7 +50,10 @@ static volatile int8_t NumTickets;
 void i2c1_ev_exti23_isr(){
 	 i2c_clear_stop(I2C1);
 }
- 
+
+void i2c1_er_isr(){
+	
+}
 
 /* Start an i2c transaction with the current ticket. */
 static void start_conveyor(void);

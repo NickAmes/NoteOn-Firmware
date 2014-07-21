@@ -19,25 +19,22 @@ int main(void){
 	init_system();
 
 	uint8_t data[6];
-	int16_t x, y, z;
 	data[0] = 0x67;
 	write_i2c(I2C1, 0x1D, 0x20, 1, data); /* Initialize Aux. Accelerometer. */
-	led_on();
 	data[0] = 0x10;
-	write_i2c(I2C1, 0x1D, 0x25, 1, data); /* Set ADD_INC. */
+	write_i2c(I2C1, 0x1D, 0x25, 1, data);
+	led_on();
 	delay_ms(100);
 	while(1){
-		read_i2c(I2C1, 0x1D, 0x27, 1, data); /* Read STATUS register. */
-		if(data[0] & (1 << 3)){ /* If data is available */
-			read_i2c(I2C1, 0x1D, 0x28, 1, &data[0]);
-			read_i2c(I2C1, 0x1D, 0x29, 1, &data[1]);
-			read_i2c(I2C1, 0x1D, 0x2A, 1, &data[2]);
-			read_i2c(I2C1, 0x1D, 0x2B, 1, &data[3]);
-			read_i2c(I2C1, 0x1D, 0x2C, 1, &data[4]);
-			read_i2c(I2C1, 0x1D, 0x2D, 1, &data[5]);
-			iprintf("XL: %3hhd %3hhd   YL: %3hhd %3hhd   Z: %3hhd %3hhd\n\r", data[0], data[1], data[2], data[3], data[4], data[5]);
-			delay_ms(200);
-		}
+		read_i2c(I2C1, 0x1D, 0x28, 6, data);
+		iprintf("XL: %3hhd %3hhd   YL: %3hhd %3hhd   Z: %3hhd %3hhd\n\r", data[0], data[1], data[2], data[3], data[4], data[5]);
+		delay_ms(200);
+// 		read_i2c(I2C1, 0x1D, 0x27, 1, data); /* Read STATUS register. */
+// 		if(data[0] & (1 << 3)){ /* If data is available */
+// 			read_i2c(I2C1, 0x1D, 0x28, 6, data);
+// 			iprintf("XL: %3hhd %3hhd   YL: %3hhd %3hhd   Z: %3hhd %3hhd\n\r", data[0], data[1], data[2], data[3], data[4], data[5]);
+// 			delay_ms(200);
+// 		}
 	}
 
 // 	uint8_t data[2];
