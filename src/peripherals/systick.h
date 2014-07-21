@@ -13,10 +13,12 @@
  * continuous operation. */
 extern volatile uint32_t SystemTime;
 
-
 /* Setup the SysTick timer so that it fires every millisecond.
  * This function depends on the current system clock. It should be called
  * whenever the system clock changes. */
 void init_systick(void);
+
+/* Wait for the given amount of time to elapse before returning. */
+void delay_ms(uint32_t milliseconds);
 
 #endif

@@ -30,4 +30,9 @@ void init_systick(void){
 	 *to the system clock. */
 	STK_CSR = 7;
 }
-	
+
+/* Wait for the given amount of time to elapse before returning. */
+void delay_ms(uint32_t milliseconds){
+	uint32_t target = SystemTime + milliseconds;
+	while(SystemTime < target);
+}
