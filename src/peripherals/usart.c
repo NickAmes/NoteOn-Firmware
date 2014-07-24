@@ -96,7 +96,7 @@ void write_str(const char *str){
 	if(!UsartEnabled){
 		init_usart();
 	}
-	while('0' != *str){
+	while('\0' != *str){
 		usart_send_blocking(USART1, *str);
 		str++;
 	}
