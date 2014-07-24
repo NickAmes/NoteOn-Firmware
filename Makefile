@@ -3,7 +3,7 @@
 # C Compiler Flags:
 CFLAGS=-O2 -g -Wextra -Wshadow -Wimplicit-function-declaration
 CFLAGS+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes -std=gnu99
-CFLAGS+= -fno-common -ffunction-sections -fdata-sections
+CFLAGS+= -fno-common -ffunction-sections -fdata-sections -specs=nano.specs
 
 # C Pre-Processor Flags:
 CPPFLAGS= -Wall -Wundef
