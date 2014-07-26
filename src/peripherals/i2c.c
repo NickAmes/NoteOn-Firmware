@@ -12,6 +12,9 @@
 #include <libopencm3/cm3/cortex.h>
 #include <stdbool.h>
 #include <string.h>
+#include "systick.h"
+//TODO: remove when done.
+#include "usart.h"
 
 /* If !0, the I2C peripheral is enabled. */
 static volatile bool I2CEnabled;
@@ -21,7 +24,7 @@ static volatile i2c_ticket_t Conveyor[I2C_CONVEYOR_SIZE];
 
 /* Current ticket. This variable stores the index of the current ticket.
  * If it is negative, no tickets are currently being processed. */
-static volatile int8_t CurrentTicket;
+static volatile int8_t CurrentTicket = -1;
 
 /* Number of tickets on conveyor. This includes the ticket currently being
  * processed; when NumTickets == I2C_CONVEYOR_SIZE the conveyor is full. */
@@ -46,17 +49,82 @@ static volatile int8_t NumTickets;
  *    error flag on the ticket, and move on to the next ticket.
  */
 
+/* Start a DMA transfer from the I2C peripheral to memory. */
+static void dma_read(uint8_t *data, uint8_t num_data);
 
-void i2c1_ev_exti23_isr(){
-	 i2c_clear_stop(I2C1);
-}
+/* Start a DMA transfer from memory to the I2C peripheral. */
+static void dma_write(uint8_t *data, uint8_t num_data);
 
-void i2c1_er_isr(){
+static volatile enum {SENT_ADDRESS,     /* The address has been sent. */
+                      SENT_REGISTER,    /* The register has been sent.
+                                         * A data write or repeated start for
+				         * reading can now occur. */
+		      SENT_2ND_ADDRESS, /* The repeated start and address have
+		                         * been sent. A data read can now occur. */
+		      TRANSFER_DONE     /* The transfer is complete. */
+} TicketState;
+
+
+/* Start an i2c transaction with the current ticket.
+ * CurrentTicket and NumTickets must be correctly set before calling this
+ * function.
+ * The function does not check if the I2C peripheral is busy, and should
+ * only be called when the bus is idle. */
+static void start_conveyor(void){
+	/* No busyness check is performed, as we can't block here. */
+	//TODO
+	if(I2C_WRITE == Conveyor[CurrentTicket].rw){
+		write_i2c(I2C1, Conveyor[CurrentTicket].addr,
+		          Conveyor[CurrentTicket].reg,
+		          Conveyor[CurrentTicket].size, Conveyor[CurrentTicket].data);
+	} else {
+		read_i2c(I2C1, Conveyor[CurrentTicket].addr,
+		          Conveyor[CurrentTicket].reg,
+		          Conveyor[CurrentTicket].size, Conveyor[CurrentTicket].data);
+	}
 	
 }
 
-/* Start an i2c transaction with the current ticket. */
-static void start_conveyor(void);
+static void i2c_error_cleanup(void){
+	/* On error: set the error flag on the current ticket, reset
+	 * the I2C peripheral, and proceed to the next ticket if there is one. */
+	init_i2c();
+	//TODO: reset DMA.
+	if(CurrentTicket >= 0){
+		if(Conveyor[CurrentTicket].done_flag != NULL){
+			*(Conveyor[CurrentTicket].done_flag) = I2C_ERROR;
+		}
+		--NumTickets;
+		if(NumTickets > 0){
+			CurrentTicket = next_ticket();
+			start_conveyor();
+		} else {
+			CurrentTicket = -1;
+		}
+	} else {
+		/* Looks like we got into an invalid state somehow. */
+		NumTickets = 0;
+		CurrentTicket = -1;
+	}
+}
+
+/* NACK error interrupt. Conveyor management is handled through
+ * the DMA interrupts. */
+void i2c1_ev_exti23_isr(){
+	//TODO: remove when done.
+	write_str("NACK\r\n");
+	I2C1_ICR |= I2C_ICR_NACKCF; /* Clear the NACK flag so the ISR will exit. */
+	i2c_error_cleanup();
+}
+
+
+/* I2C error interrupt. */
+void i2c1_er_isr(){
+	//TODO: remove when done.
+	write_str("I2C Error\r\n");
+	I2C1_ICR |= 0x00003F00; /* Clear the error flag(s) so the ISR will exit. */
+	i2c_error_cleanup();
+}
 
 /* Add a ticket to the conveyor. The ticket will be copied (and therefore
  * doesn't need to exist after the function call) but the data will not.
@@ -111,9 +179,13 @@ void init_i2c(void){
 	i2c_peripheral_enable(I2C1);
 
 	nvic_set_priority(NVIC_I2C1_EV_EXTI23_IRQ, I2C_IRQ_PRIORITY << 4);
+	nvic_set_priority(NVIC_I2C1_ER_IRQ, I2C_IRQ_PRIORITY << 4);
 	nvic_enable_irq(NVIC_I2C1_EV_EXTI23_IRQ);
-	//i2c_enable_interrupt(I2C1, I2C_CR1_STOPIE);
-	//TODO: Choose which interrupts to enable
+	nvic_enable_irq(NVIC_I2C1_ER_IRQ);
+	i2c_enable_interrupt(I2C1, I2C_CR1_NACKIE);
+	i2c_enable_interrupt(I2C1, I2C_CR1_ERRIE);
+	//TODO: DMA interrupts and setup
+
 	I2CEnabled = true;
 }
 

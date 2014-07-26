@@ -16,16 +16,26 @@
 
 /* Ticket structure. */
 typedef struct i2c_ticket_t {
-	enum {I2C_WRITE, I2C_READ} rw;
-	uint8_t device_addr;
-	uint8_t reg;
+	uint8_t rw; /* Transfer direction. 0=write, 1=read. */
+	uint8_t addr; /* 7-bit I2C device address. */
+	uint8_t reg; /* 8-bit register address. */
 	uint8_t *data; /* Data to be transferred - this must not be NULL. */
-	uint8_t num_data; /* Number of bytes to be transferred. */
-
+	uint8_t size; /* Number of bytes to be transferred. */
 	uint8_t *done_flag; /* The flag will be set to 1 when the transaction is
 	                     * complete, or to 2 if an error occurs. This field
 			     * may be NULL. */
+	uint32_t *at_time;  /* If not NULL, this will be set the the value of
+	                     * SystemTime at the moment the transfer was
+			     * completed. If an error occurs, this is not set. */
 } i2c_ticket_t;
+
+/* i2c_ticket_t->rw values */
+#define I2C_WRITE 0
+#define I2C_READ 1
+
+/* i2c_ticket_t->done_flag values */
+#define I2C_DONE 1
+#define I2C_ERROR 2
 
 /* Number of tickets that the conveyor can hold. */
 #define I2C_CONVEYOR_SIZE 4

@@ -23,8 +23,6 @@ int main(void){
 	write_i2c(I2C1, 0x1E, 0x20, 1, data); /* Initialize Aux. Accelerometer. */
 	data[0] = 0x10;
 	write_i2c(I2C1, 0x1E, 0x25, 1, data); /* Set ADD_INC bit. */
-	data[0] = 0x20; /* +-16G full-scale range. */
-	write_i2c(I2C1, 0x1E, 0x24, 1, data);
 	led_on();
 	delay_ms(100);
 	while(1){
@@ -37,7 +35,7 @@ int main(void){
 		iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
 		delay_ms(200);
 	}
-
+	
 // 	uint8_t data[2];
 // 	uint16_t voltage;
 // 	while(1){
@@ -52,6 +50,16 @@ int main(void){
 // 		voltage = data[0] | (data[1] << 8);
 // 		printf("I2C: %f\n\r", (float) voltage * 2.2e-3);
 // 	}
+}
+
+/* Print a debugging welcome message using write_str(). */
+static void welcome_message(void){
+	delay_ms(20); /* Helps the computer's UART synchronize. */
+	write_str("NoteOn Smart Pen Firmware built on ");
+	write_str(__TIME__);
+	write_str(" ");
+	write_str(__DATE__);
+	write_str(".\n\r");
 }
 
 /* Setup all peripherals. */
@@ -69,5 +77,6 @@ void init_system(void){
 	init_led();
 	init_switches();
 	init_i2c();
-	
+
+	welcome_message();
 }
