@@ -6,14 +6,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <libopencm3/cm3/scb.h>
+#include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/i2c.h>
 #include "peripherals/peripherals.h"
 #include "board/board.h"
-
-#include <libopencm3/cm3/nvic.h>
-
-//TODO
-#include "peripherals/basepri.h"
 
 /* Setup all peripherals. */
 void init_system(void);

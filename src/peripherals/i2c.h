@@ -58,8 +58,4 @@ void init_i2c(void);
 /* Shutdown the I2C1 peripheral to save power. */
 void shutdown_i2c(void);
 
-
-
-
-
 #endif

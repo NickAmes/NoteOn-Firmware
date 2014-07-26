@@ -16,6 +16,7 @@
 #include "basepri.h"
 //TODO: remove when done.
 #include "usart.h"
+#include <stdio.h>
 
 /* If !0, the I2C peripheral is enabled. */
 static volatile bool I2CEnabled;
@@ -29,7 +30,7 @@ static volatile int8_t CurrentTicket = -1;
 
 /* Number of tickets on conveyor. This includes the ticket currently being
  * processed; when NumTickets == I2C_CONVEYOR_SIZE the conveyor is full. */
-static volatile int8_t NumTickets;
+static volatile int8_t NumTickets = 0;
 
 /* Evaluates to the index of the ticket after the given one. This handles
  * the circular wrap-around at the end of the conveyor. */
@@ -74,7 +75,9 @@ static volatile enum {SENT_ADDRESS,     /* The address has been sent. */
 static void start_conveyor(void){
 	/* No busyness check is performed, as we can't block here. */
 	//TODO
+	write_str("Starting conveyor\n\r");
 	if(I2C_WRITE == Conveyor[CurrentTicket].rw){
+		iprintf("I2C Writing. Dev. Addr. = %d, Register = %d, Size = %d\r\n", (int) Conveyor[CurrentTicket].addr, (int) Conveyor[CurrentTicket].reg, (int) Conveyor[CurrentTicket].size);
 		write_i2c(I2C1, Conveyor[CurrentTicket].addr,
 		          Conveyor[CurrentTicket].reg,
 		          Conveyor[CurrentTicket].size, Conveyor[CurrentTicket].data);
@@ -144,20 +147,20 @@ int add_ticket_i2c(i2c_ticket_t *ticket){
 	if(NULL == ticket)return -1;
 	if(NULL == ticket->data)return -1;
 	if(!I2CEnabled)init_i2c();
-	uint32_t save_basepri = __get_BASEPRI();
-	__set_BASEPRI(I2C_IRQ_PRIORITY);
+	uint32_t save_basepri = get_basepri();
+	set_basepri(I2C_IRQ_PRIORITY);
 	if(I2C_CONVEYOR_SIZE == NumTickets){
-		__set_BASEPRI(save_basepri);
+		set_basepri(save_basepri);
 		return -2; /* Conveyor is full. */
 	}
-	uint8_t ticket_index = open_ticket();
-	memcpy((i2c_ticket_t *) &Conveyor[ticket_index], ticket, sizeof(i2c_ticket_t));
+	int ticket_index = open_ticket();
+	memmove((i2c_ticket_t *) Conveyor + ticket_index, ticket, sizeof(i2c_ticket_t));
 	NumTickets++;
 	if(-1 == CurrentTicket){
-		CurrentTicket = open_ticket();
+		CurrentTicket = ticket_index;
 		start_conveyor();
 	}
-	__set_BASEPRI(save_basepri);
+	set_basepri(save_basepri);
 	return 0;
 }
 
