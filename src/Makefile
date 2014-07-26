@@ -28,7 +28,7 @@ board/switches.o: board/switches.c board/switches.h
 peripherals/systick.o: peripherals/systick.c peripherals/systick.h
 	$(Q)$(CC) -c peripherals/systick.c -o peripherals/systick.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
 
-peripherals/i2c.o: peripherals/i2c.c peripherals/i2c.h
+peripherals/i2c.o: peripherals/i2c.c peripherals/i2c.h peripherals/basepri.h
 	$(Q)$(CC) -c peripherals/i2c.c -o peripherals/i2c.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
 	
 clean:

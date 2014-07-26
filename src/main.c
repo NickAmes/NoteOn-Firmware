@@ -12,26 +12,34 @@
 
 #include <libopencm3/cm3/nvic.h>
 
+//TODO
+#include "peripherals/basepri.h"
+
 /* Setup all peripherals. */
 void init_system(void);
 
 int main(void){
 	init_system();
-
+	
 	uint8_t data[6];
+	uint8_t flag;
+	i2c_ticket_t ticket;
+	ticket.done_flag = &flag;
+	ticket.at_time = 0;
+	
+	ticket.addr = 0x1D;
+	ticket.data = data;
+
+	ticket.rw = I2C_WRITE;
+	ticket.reg = 0x20;
+	ticket.size = 1;
 	data[0] = 0x67;
-	write_i2c(I2C1, 0x1E, 0x20, 1, data); /* Initialize Aux. Accelerometer. */
-	data[0] = 0x10;
-	write_i2c(I2C1, 0x1E, 0x25, 1, data); /* Set ADD_INC bit. */
+	//write_i2c(I2C1, 0x1D, 0x20, 1, data); /* Initialize IMU. Accelerometer. */
+	add_ticket_i2c(&ticket);
 	led_on();
 	delay_ms(100);
 	while(1){
-		read_i2c(I2C1, 0x1E, 0x28, 1, &data[0]);
-		read_i2c(I2C1, 0x1E, 0x29, 1, &data[1]);
-		read_i2c(I2C1, 0x1E, 0x2A, 1, &data[2]);
-		read_i2c(I2C1, 0x1E, 0x2B, 1, &data[3]);
-		read_i2c(I2C1, 0x1E, 0x2C, 1, &data[4]);
-		read_i2c(I2C1, 0x1E, 0x2D, 1, &data[5]);
+		read_i2c(I2C1, 0x1D, 0xA8, 6, data);
 		iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
 		delay_ms(200);
 	}

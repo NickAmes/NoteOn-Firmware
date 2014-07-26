@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "systick.h"
+#include "basepri.h"
 //TODO: remove when done.
 #include "usart.h"
 
@@ -82,6 +83,12 @@ static void start_conveyor(void){
 		          Conveyor[CurrentTicket].reg,
 		          Conveyor[CurrentTicket].size, Conveyor[CurrentTicket].data);
 	}
+	--NumTickets;
+	if(0 == NumTickets){
+		CurrentTicket = -1;
+	} else {
+		CurrentTicket = next_ticket(CurrentTicket);
+	}
 	
 }
 
@@ -137,11 +144,10 @@ int add_ticket_i2c(i2c_ticket_t *ticket){
 	if(NULL == ticket)return -1;
 	if(NULL == ticket->data)return -1;
 	if(!I2CEnabled)init_i2c();
-	/* If interrupts are already disabled don't re-enable them. */
-	bool reenable_interrupts = !cm_is_masked_interrupts();
-	cm_disable_interrupts();
+	uint32_t save_basepri = __get_BASEPRI();
+	__set_BASEPRI(I2C_IRQ_PRIORITY);
 	if(I2C_CONVEYOR_SIZE == NumTickets){
-		if(reenable_interrupts)cm_enable_interrupts();
+		__set_BASEPRI(save_basepri);
 		return -2; /* Conveyor is full. */
 	}
 	uint8_t ticket_index = open_ticket();
@@ -151,7 +157,7 @@ int add_ticket_i2c(i2c_ticket_t *ticket){
 		CurrentTicket = open_ticket();
 		start_conveyor();
 	}
-	if(reenable_interrupts)cm_enable_interrupts();
+	__set_BASEPRI(save_basepri);
 	return 0;
 }
 
