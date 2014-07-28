@@ -115,10 +115,6 @@ static volatile enum {SENT_ADDRESS,     /* The address has been sent. */
  * only be called when the bus is idle. */
 static void start_conveyor(void){
 	/* No busyness check is performed, as we can't block here. */
-	//TODO
-	iprintf("start_conveyor().\r\n");
-
-	/* Set transfer properties. */
 	if(I2C_READ == Conveyor[CurrentTicket].rw){
 		i2c_set_bytes_to_transfer(I2C1, 1);
 	} else {
@@ -126,13 +122,9 @@ static void start_conveyor(void){
 	}
 	i2c_set_7bit_address(I2C1, Conveyor[CurrentTicket].addr);
 	i2c_set_write_transfer_dir(I2C1);
-	//TODO
-	write_str("Starting 1st Transfer.\r\n");
 	i2c_send_start(I2C1);
 	TicketState = SENT_ADDRESS;
 }
-
-
 
 static void i2c_error_cleanup(void){
 	/* On error: set the error flag on the current ticket, reset
@@ -206,6 +198,9 @@ void i2c1_ev_exti23_isr(){
 			i2c_disable_rxdma(I2C1);
 			TicketState = TRANSFER_DONE;
 			if(CurrentTicket >= 0){
+				if(NULL != Conveyor[CurrentTicket].at_time){
+					*Conveyor[CurrentTicket].at_time = SystemTime;
+				}
 				if(NULL != Conveyor[CurrentTicket].done_flag){
 					*Conveyor[CurrentTicket].done_flag = 1;
 				}
