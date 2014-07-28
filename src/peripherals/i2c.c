@@ -20,12 +20,20 @@
 #include <stdio.h>
 
 
-/* I2C Conveyor Steps
- * 1. start_conveyor() sets number of data = 1, direction, and slave address.
+/* I2C Conveyor Reading Steps
+ * 1. start_conveyor() sets number of data = 1, direction=write, and slave address.
  *  --The TXIS interrupt is triggered after the slave address has been sent.--
  * 2. The TXIS handler sends the register address.
  *  --The TC interrupt is triggered after the register address has been sent.--
- * 3. The TC handler sets up dma for the data and performs a repeated start.
+ * 3. The TC handler sets up transfer properties and dma for the data and performs a repeated start.
+ *  --The TC interrupt is triggered when the transfer completes.--
+ * 4. The TC handler sets the flag on the current ticket and starts the next ticket.
+ */
+
+/* I2C Conveyor Writing Steps
+ * 1. start_conveyor() sets number of data = (1 + ticket size), direction=write, and slave address.
+ *  --The TXIS interrupt is triggered after the slave address has been sent.--
+ * 2. The TXIS handler sends the register address sets up DMA for the data.
  *  --The TC interrupt is triggered when the transfer completes.--
  * 4. The TC handler sets the flag on the current ticket and starts the next ticket.
  */
@@ -67,7 +75,6 @@ static void i2c_dma_read(volatile uint8_t *data, uint8_t size){
 	dma_disable_peripheral_increment_mode(DMA1, DMA_CHANNEL7);
 	dma_set_read_from_peripheral(DMA1, DMA_CHANNEL7);
 	dma_enable_channel(DMA1, DMA_CHANNEL7);
-	
 	i2c_enable_rxdma(I2C1);
 }
 
@@ -87,7 +94,6 @@ static void i2c_dma_write(volatile uint8_t *data, uint8_t size){
 	dma_disable_peripheral_increment_mode(DMA1, DMA_CHANNEL6);
 	dma_set_read_from_memory(DMA1, DMA_CHANNEL6);
 	dma_enable_channel(DMA1, DMA_CHANNEL6);
-
 	i2c_enable_txdma(I2C1);
 }
 
@@ -96,9 +102,8 @@ static void i2c_dma_write(volatile uint8_t *data, uint8_t size){
  * but the extra states are provided for completeness. */
 static volatile enum {SENT_ADDRESS,     /* The address has been sent. */
                       SENT_REGISTER,    /* The register has been sent.
-                                         * A data write or repeated start for
-				         * reading can now occur. */
-		      SENT_2ND_START, /* The repeated start and address have
+                                         * The repeated start can now occur. */
+		      SENT_2ND_START,   /* The repeated start and address have
 		                         * been sent. A data read can now occur. */
 		      TRANSFER_DONE     /* The transfer is complete. */
 } TicketState = TRANSFER_DONE;
@@ -110,44 +115,21 @@ static volatile enum {SENT_ADDRESS,     /* The address has been sent. */
  * only be called when the bus is idle. */
 static void start_conveyor(void){
 	/* No busyness check is performed, as we can't block here. */
-	if(I2C_WRITE == Conveyor[CurrentTicket].rw){
-		//TODO
-		iprintf("Writing I2C.\r\n");
-		
+	//TODO
+	iprintf("start_conveyor().\r\n");
 
-		write_i2c(I2C1, Conveyor[CurrentTicket].addr,
-		          Conveyor[CurrentTicket].reg,
-		          Conveyor[CurrentTicket].size, Conveyor[CurrentTicket].data);
-		//TODO:
-		if(CurrentTicket >= 0){
-			if(NULL != Conveyor[CurrentTicket].done_flag){
-				*Conveyor[CurrentTicket].done_flag = 1;
-			}
-			--NumTickets;
-			if(0 == NumTickets){
-				CurrentTicket = -1;
-			} else {
-				CurrentTicket = next_ticket(CurrentTicket);
-			}
-		}
-
-	} else {
-		//TODO
-		write_str("Reading I2C.\r\n");
-
-		//TODO
-		i2c_enable_interrupt(I2C1, I2C_CR1_TCIE);
-		i2c_enable_interrupt(I2C1, I2C_CR1_TXIE);
-
-		/* Set transfer properties. */
+	/* Set transfer properties. */
+	if(I2C_READ == Conveyor[CurrentTicket].rw){
 		i2c_set_bytes_to_transfer(I2C1, 1);
-		i2c_set_7bit_address(I2C1, Conveyor[CurrentTicket].addr);
-		i2c_set_write_transfer_dir(I2C1);
-		i2c_disable_autoend(I2C1);
-		//TODO
-		write_str("Starting 1st Transfer.\r\n");
-		i2c_send_start(I2C1);
+	} else {
+		i2c_set_bytes_to_transfer(I2C1, 1 + Conveyor[CurrentTicket].size);
 	}
+	i2c_set_7bit_address(I2C1, Conveyor[CurrentTicket].addr);
+	i2c_set_write_transfer_dir(I2C1);
+	//TODO
+	write_str("Starting 1st Transfer.\r\n");
+	i2c_send_start(I2C1);
+	TicketState = SENT_ADDRESS;
 }
 
 
@@ -181,14 +163,21 @@ static void i2c_error_cleanup(void){
 
 /* I2C event interrupt. Handles STOP, TXIS, and NACK events. */
 void i2c1_ev_exti23_isr(){
-	if(I2C1_ISR & I2C_ISR_NACKF){ /* NACK error */
+	if(I2C1_ISR & I2C_ISR_NACKF){
+		/* NACK error */
 		I2C1_ICR |= I2C_ICR_NACKCF; /* Clear the NACK flag so the ISR will exit. */
 		i2c_error_cleanup();
 	} else if(I2C1_ISR & I2C_ISR_TXIS){
 		/* TXIS event - time to transmit register address. */
 		write_str("Sending register.\r\n");
 		i2c_send_data(I2C1, Conveyor[CurrentTicket].reg);
-		TicketState = SENT_REGISTER;
+		if(I2C_WRITE == Conveyor[CurrentTicket].rw){
+			i2c_dma_write(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
+			TicketState = SENT_2ND_START;
+		} else {
+			TicketState = SENT_REGISTER;
+		}
+		
 	} else if(I2C1_ISR & I2C_ISR_TC){
 		//TODO:
 		write_str("Got TC\r\n");
@@ -196,15 +185,14 @@ void i2c1_ev_exti23_isr(){
 		/* Transfer complete.
 		 * Send repeated start or wrap up the ticket. */
 		if(SENT_REGISTER == TicketState){
-			/* Send repeated start and DMA data. */
+			/* Send repeated start and DMA data for reading. */
 			//TODO
 			write_str("Setting transfer properties for part 2.\r\n");
+			i2c_set_read_transfer_dir(I2C1);
+			i2c_dma_read(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
 			i2c_set_bytes_to_transfer(I2C1, Conveyor[CurrentTicket].size);
 			i2c_set_7bit_address(I2C1, Conveyor[CurrentTicket].addr);
-			i2c_set_read_transfer_dir(I2C1);
-			//TODO
-			write_str("Enabling DMA.\r\n");
-			i2c_dma_read(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
+			
 			//TODO
 			write_str("2nd Start for read transfer.\r\n");
 			i2c_send_start(I2C1);
@@ -226,6 +214,7 @@ void i2c1_ev_exti23_isr(){
 					CurrentTicket = -1;
 				} else {
 					CurrentTicket = next_ticket(CurrentTicket);
+					start_conveyor();
 				}
 			}
 		}
@@ -301,9 +290,8 @@ void init_i2c(void){
 	nvic_enable_irq(NVIC_I2C1_EV_EXTI23_IRQ);
 	nvic_enable_irq(NVIC_I2C1_ER_IRQ);
 	i2c_enable_interrupt(I2C1, I2C_CR1_NACKIE);
-	//TODO
-	//i2c_enable_interrupt(I2C1, I2C_CR1_TCIE);
-	//i2c_enable_interrupt(I2C1, I2C_CR1_TXIE);
+	i2c_enable_interrupt(I2C1, I2C_CR1_TCIE);
+	i2c_enable_interrupt(I2C1, I2C_CR1_TXIE);
 	i2c_enable_interrupt(I2C1, I2C_CR1_ERRIE);
 
 	I2CEnabled = true;

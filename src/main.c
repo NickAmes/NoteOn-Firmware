@@ -31,7 +31,7 @@ int main(void){
 	ticket.size = 1;
 	data[0] = 0x67;
 	add_ticket_i2c(&ticket);
-	
+
 	led_on();
 	delay_ms(100);
 	while(1){
