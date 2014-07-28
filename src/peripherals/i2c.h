@@ -40,12 +40,14 @@ typedef struct i2c_ticket_t {
 /* Number of tickets that the conveyor can hold. */
 #define I2C_CONVEYOR_SIZE 4
 
-/* Priority of I2C interrupts. */
+/* Priority of I2C interrupts. This is true numeric value, not the
+ * hardware-specific shifted one. */
 #define I2C_IRQ_PRIORITY 8
 
 /* Add a ticket to the conveyor. The ticket will be copied (and therefore
  * doesn't need to exist after the function call) but the data will not.
- * This function may be called from an interrupt.
+ * This function may be called from an interrupt as long as that interrupt has
+ * a priority value greater than (less urgent) or equal to I2C_IRQ_PRIORITY.
  * Returns:
  *   0 - Success.
  *  -1 - NULL data field or ticket pointer.

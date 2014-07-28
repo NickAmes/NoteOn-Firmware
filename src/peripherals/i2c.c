@@ -15,9 +15,6 @@
 #include <string.h>
 #include "systick.h"
 #include "basepri.h"
-//TODO: remove when done.
-#include "usart.h"
-#include <stdio.h>
 
 
 /* I2C Conveyor Reading Steps
@@ -39,7 +36,7 @@
  */
 
 /* If true, the I2C peripheral is enabled. */
-static volatile bool I2CEnabled;
+static volatile bool I2CEnabled = false;
 
 /* Conveyor. */
 static volatile i2c_ticket_t Conveyor[I2C_CONVEYOR_SIZE];
@@ -161,38 +158,29 @@ void i2c1_ev_exti23_isr(){
 		i2c_error_cleanup();
 	} else if(I2C1_ISR & I2C_ISR_TXIS){
 		/* TXIS event - time to transmit register address. */
-		write_str("Sending register.\r\n");
 		i2c_send_data(I2C1, Conveyor[CurrentTicket].reg);
 		if(I2C_WRITE == Conveyor[CurrentTicket].rw){
+			/* If writing, send the rest of the data via DMA now. */
 			i2c_dma_write(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
 			TicketState = SENT_2ND_START;
 		} else {
+			/* If reading, do a repeated start before reading the data. */
 			TicketState = SENT_REGISTER;
 		}
 		
 	} else if(I2C1_ISR & I2C_ISR_TC){
-		//TODO:
-		write_str("Got TC\r\n");
-
 		/* Transfer complete.
 		 * Send repeated start or wrap up the ticket. */
 		if(SENT_REGISTER == TicketState){
 			/* Send repeated start and DMA data for reading. */
-			//TODO
-			write_str("Setting transfer properties for part 2.\r\n");
 			i2c_set_read_transfer_dir(I2C1);
 			i2c_dma_read(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
 			i2c_set_bytes_to_transfer(I2C1, Conveyor[CurrentTicket].size);
 			i2c_set_7bit_address(I2C1, Conveyor[CurrentTicket].addr);
-			
-			//TODO
-			write_str("2nd Start for read transfer.\r\n");
 			i2c_send_start(I2C1);
 			TicketState = SENT_2ND_START;
 		} else {
 			/* Wrap up the ticket. */
-			//TODO:
-			write_str("Wrap up ticket. \r\n");
 			i2c_send_stop(I2C1);
 			i2c_disable_txdma(I2C1);
 			i2c_disable_rxdma(I2C1);
@@ -216,18 +204,16 @@ void i2c1_ev_exti23_isr(){
 	}
 }
 
-
 /* I2C error interrupt. */
 void i2c1_er_isr(){
-	//TODO: remove when done.
-	write_str("I2C Error\r\n");
 	I2C1_ICR |= 0x00003F00; /* Clear the error flag(s) so the ISR will exit. */
 	i2c_error_cleanup();
 }
 
 /* Add a ticket to the conveyor. The ticket will be copied (and therefore
  * doesn't need to exist after the function call) but the data will not.
- * This function may be called from an interrupt.
+ * This function may be called from an interrupt as long as that interrupt has
+ * a priority value greater than (less urgent) or equal to I2C_IRQ_PRIORITY.
  * Returns:
  *   0 - Success.
  *  -1 - NULL data field or ticket pointer.
@@ -237,7 +223,8 @@ int add_ticket_i2c(i2c_ticket_t *ticket){
 	if(NULL == ticket->data)return -1;
 	if(!I2CEnabled)init_i2c();
 	uint32_t save_basepri = get_basepri();
-	set_basepri(I2C_IRQ_PRIORITY);
+	set_basepri(I2C_IRQ_PRIORITY); /* Disable I2C interrupts while allowing
+	                                * higher priority ones to proceed. */
 	if(I2C_CONVEYOR_SIZE == NumTickets){
 		set_basepri(save_basepri);
 		return -2; /* Conveyor is full. */
@@ -295,7 +282,9 @@ void init_i2c(void){
 /* Shutdown the I2C1 peripheral to save power. */
 void shutdown_i2c(void){
 	nvic_disable_irq(NVIC_I2C1_EV_EXTI23_IRQ);
+	nvic_disable_irq(NVIC_I2C1_ER_IRQ);
 	i2c_peripheral_disable(I2C1);
 	rcc_periph_clock_disable(RCC_I2C1);
+
 	I2CEnabled = false;
 }
