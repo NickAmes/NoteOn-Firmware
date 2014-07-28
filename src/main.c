@@ -18,7 +18,7 @@ int main(void){
 	init_system();
 	
 	uint8_t data[6];
-	uint8_t flag;
+	volatile uint8_t flag;
 	i2c_ticket_t ticket;
 	ticket.done_flag = &flag;
 	ticket.at_time = 0;
@@ -30,14 +30,28 @@ int main(void){
 	ticket.reg = 0x20;
 	ticket.size = 1;
 	data[0] = 0x67;
-	//write_i2c(I2C1, 0x1D, 0x20, 1, data); /* Initialize IMU. Accelerometer. */
 	add_ticket_i2c(&ticket);
+	
 	led_on();
 	delay_ms(100);
 	while(1){
-		read_i2c(I2C1, 0x1D, 0xA8, 6, data);
-		iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
+		ticket.rw = I2C_READ;
+		ticket.reg = 0xA8;
+		ticket.size = 6;
+		flag = 0;
+		add_ticket_i2c(&ticket);
+		while(!flag){
+			/* Wait for data to be available. */
+			delay_ms(100);
+			iprintf("Waiting for flag...");
+		}
+		if(1 == flag){
+			iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
+		} else {
+			iprintf("I2C Error Flag=%d\n\r", flag);
+		}
 		delay_ms(200);
+		
 	}
 	
 // 	uint8_t data[2];
