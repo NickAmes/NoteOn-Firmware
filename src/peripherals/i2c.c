@@ -91,6 +91,18 @@ static void i2c_dma_write(volatile uint8_t *data, uint8_t size){
 	i2c_enable_txdma(I2C1);
 }
 
+/* State of current ticket. This variable is mainly used to tell
+ * when the 2nd address has been sent when reading from a device,
+ * but the extra states are provided for completeness. */
+static volatile enum {SENT_ADDRESS,     /* The address has been sent. */
+                      SENT_REGISTER,    /* The register has been sent.
+                                         * A data write or repeated start for
+				         * reading can now occur. */
+		      SENT_2ND_START, /* The repeated start and address have
+		                         * been sent. A data read can now occur. */
+		      TRANSFER_DONE     /* The transfer is complete. */
+} TicketState = TRANSFER_DONE;
+
 /* Start an i2c transaction with the current ticket.
  * CurrentTicket and NumTickets must be correctly set before calling this
  * function.
@@ -122,71 +134,23 @@ static void start_conveyor(void){
 	} else {
 		//TODO
 		write_str("Reading I2C.\r\n");
-		int wait;
-		int i;
-		int size = Conveyor[CurrentTicket].size;
-		while (i2c_busy(I2C1) == 1);
-		while (i2c_is_start(I2C1) == 1);
-		/*Setting transfer properties*/
+
+		//TODO
+		i2c_enable_interrupt(I2C1, I2C_CR1_TCIE);
+		i2c_enable_interrupt(I2C1, I2C_CR1_TXIE);
+
+		/* Set transfer properties. */
 		i2c_set_bytes_to_transfer(I2C1, 1);
 		i2c_set_7bit_address(I2C1, Conveyor[CurrentTicket].addr);
 		i2c_set_write_transfer_dir(I2C1);
-		//TODO
-		write_str("Disabling Autoend.\r\n");
 		i2c_disable_autoend(I2C1);
-		/*start transfer*/
 		//TODO
 		write_str("Starting 1st Transfer.\r\n");
 		i2c_send_start(I2C1);
-		
-		wait = true;
-		while (wait) {
-			if (i2c_transmit_int_status(I2C1)) {
-				wait = false;
-			}
-			while (i2c_nack(I2C1)); /* Some error */
-		}
-		//TODO
-		write_str("Sending register.\r\n");
-		i2c_send_data(I2C1, Conveyor[CurrentTicket].reg);
-		
-		while (i2c_is_start(I2C1) == 1){
-			//TODO
-			write_str("Waiting for start bit to be 0.\r\n");
-		}
-		/*Setting transfer properties*/
-		//TODO
-		write_str("Setting transfer properties for part 2.\r\n");
-		i2c_set_bytes_to_transfer(I2C1, size);
-		i2c_set_7bit_address(I2C1, Conveyor[CurrentTicket].addr);
-		i2c_set_read_transfer_dir(I2C1);
-
-		
-		//TODO
-		write_str("Enabling DMA.\r\n");
-		
-		i2c_dma_read(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
-
-		//TODO
-		write_str("2nd Start for read transfer.\r\n");
-		
-		/*start transfer*/
-		i2c_send_start(I2C1);
-		i2c_enable_interrupt(I2C1, I2C_CR1_TCIE);
 	}
 }
 
-/* State of current ticket. This variable is mainly used to tell
- * when the 2nd address has been sent when reading from a device,
- * but the extra states are provided for completeness. */
-static volatile enum {SENT_ADDRESS,     /* The address has been sent. */
-                      SENT_REGISTER,    /* The register has been sent.
-                                         * A data write or repeated start for
-				         * reading can now occur. */
-		      SENT_2ND_START, /* The repeated start and address have
-		                         * been sent. A data read can now occur. */
-		      TRANSFER_DONE     /* The transfer is complete. */
-} TicketState = TRANSFER_DONE;
+
 
 static void i2c_error_cleanup(void){
 	/* On error: set the error flag on the current ticket, reset
@@ -221,32 +185,48 @@ void i2c1_ev_exti23_isr(){
 		I2C1_ICR |= I2C_ICR_NACKCF; /* Clear the NACK flag so the ISR will exit. */
 		i2c_error_cleanup();
 	} else if(I2C1_ISR & I2C_ISR_TXIS){
-		/* TXIS event - time to transmit register address
-		 * or do a repeated start for reading. */
+		/* TXIS event - time to transmit register address. */
+		write_str("Sending register.\r\n");
+		i2c_send_data(I2C1, Conveyor[CurrentTicket].reg);
+		TicketState = SENT_REGISTER;
 	} else if(I2C1_ISR & I2C_ISR_TC){
 		//TODO:
 		write_str("Got TC\r\n");
-		//TODO:
-		i2c_disable_interrupt(I2C1, I2C_CR1_TCIE);
 
 		/* Transfer complete.
 		 * Send repeated start or wrap up the ticket. */
-
-
-		/* Wrap up the ticket. */
-		i2c_send_stop(I2C1);
-		i2c_disable_txdma(I2C1);
-		i2c_disable_rxdma(I2C1);
-		TicketState = TRANSFER_DONE;
-		if(CurrentTicket >= 0){
-			if(NULL != Conveyor[CurrentTicket].done_flag){
-				*Conveyor[CurrentTicket].done_flag = 1;
-			}
-			--NumTickets;
-			if(0 == NumTickets){
-				CurrentTicket = -1;
-			} else {
-				CurrentTicket = next_ticket(CurrentTicket);
+		if(SENT_REGISTER == TicketState){
+			/* Send repeated start and DMA data. */
+			//TODO
+			write_str("Setting transfer properties for part 2.\r\n");
+			i2c_set_bytes_to_transfer(I2C1, Conveyor[CurrentTicket].size);
+			i2c_set_7bit_address(I2C1, Conveyor[CurrentTicket].addr);
+			i2c_set_read_transfer_dir(I2C1);
+			//TODO
+			write_str("Enabling DMA.\r\n");
+			i2c_dma_read(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
+			//TODO
+			write_str("2nd Start for read transfer.\r\n");
+			i2c_send_start(I2C1);
+			TicketState = SENT_2ND_START;
+		} else {
+			/* Wrap up the ticket. */
+			//TODO:
+			write_str("Wrap up ticket. \r\n");
+			i2c_send_stop(I2C1);
+			i2c_disable_txdma(I2C1);
+			i2c_disable_rxdma(I2C1);
+			TicketState = TRANSFER_DONE;
+			if(CurrentTicket >= 0){
+				if(NULL != Conveyor[CurrentTicket].done_flag){
+					*Conveyor[CurrentTicket].done_flag = 1;
+				}
+				--NumTickets;
+				if(0 == NumTickets){
+					CurrentTicket = -1;
+				} else {
+					CurrentTicket = next_ticket(CurrentTicket);
+				}
 			}
 		}
 	}
@@ -323,6 +303,7 @@ void init_i2c(void){
 	i2c_enable_interrupt(I2C1, I2C_CR1_NACKIE);
 	//TODO
 	//i2c_enable_interrupt(I2C1, I2C_CR1_TCIE);
+	//i2c_enable_interrupt(I2C1, I2C_CR1_TXIE);
 	i2c_enable_interrupt(I2C1, I2C_CR1_ERRIE);
 
 	I2CEnabled = true;

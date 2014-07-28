@@ -48,7 +48,7 @@ int main(void){
 		add_ticket_i2c(&ticket);
 		while(!flag){
 			/* Wait for data to be available. */
-			delay_ms(1);
+			delay_ms(2);
 			if(flag)break;
 			iprintf("Waiting for flag\r\n");
 			delay_ms(100);
