@@ -35,6 +35,12 @@ int main(void){
 	led_on();
 	delay_ms(100);
 	while(1){
+		data[0] = 0;
+		data[1] = 0;
+		data[2] = 0;
+		data[3] = 0;
+		data[4] = 0;
+		data[5] = 0;
 		ticket.rw = I2C_READ;
 		ticket.reg = 0xA8;
 		ticket.size = 6;
@@ -42,13 +48,15 @@ int main(void){
 		add_ticket_i2c(&ticket);
 		while(!flag){
 			/* Wait for data to be available. */
+			delay_ms(1);
+			if(flag)break;
+			iprintf("Waiting for flag\r\n");
 			delay_ms(100);
-			iprintf("Waiting for flag...");
 		}
 		if(1 == flag){
 			iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
 		} else {
-			iprintf("I2C Error Flag=%d\n\r", flag);
+			iprintf("I2C Error, Flag=%d\n\r", flag);
 		}
 		delay_ms(200);
 		

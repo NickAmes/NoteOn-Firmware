@@ -51,7 +51,8 @@ static volatile int8_t NumTickets = 0;
 /* Start a DMA transfer from the I2C peripheral to memory.
  * This function handles configuration of the DMA and I2C peripherals
  * for the transfer. */
-static void dma_read(uint8_t *data, uint8_t size){
+static void i2c_dma_read(volatile uint8_t *data, uint8_t size){
+	dma_channel_reset(DMA1, DMA_CHANNEL7);	
 	dma_disable_channel(DMA1, DMA_CHANNEL7);
 	dma_set_peripheral_address(DMA1, DMA_CHANNEL7, (uint32_t) &(I2C_RXDR(I2C1)));
 	dma_set_memory_address(DMA1, DMA_CHANNEL7, (uint32_t) data);
@@ -70,7 +71,8 @@ static void dma_read(uint8_t *data, uint8_t size){
 /* Start a DMA transfer from memory to the I2C peripheral.
  * This function handles configuration of the DMA and I2C peripherals
  * for the transfer. */
-static void dma_write(uint8_t *data, uint8_t size){
+static void i2c_dma_write(volatile uint8_t *data, uint8_t size){
+	dma_channel_reset(DMA1, DMA_CHANNEL6);
 	dma_disable_channel(DMA1, DMA_CHANNEL6);
 	dma_set_peripheral_address(DMA1, DMA_CHANNEL6,  (uint32_t) &(I2C_TXDR(I2C1)));
 	dma_set_memory_address(DMA1, DMA_CHANNEL6, (uint32_t) data);
@@ -99,22 +101,9 @@ static void start_conveyor(void){
 		write_i2c(I2C1, Conveyor[CurrentTicket].addr,
 		          Conveyor[CurrentTicket].reg,
 		          Conveyor[CurrentTicket].size, Conveyor[CurrentTicket].data);
-		//TODO:
-		iprintf("Setting flag. CurrentTicket=%d NumTickets=%d\n\r", CurrentTicket, NumTickets);
-		if(CurrentTicket >= 0){
-			if(NULL != Conveyor[CurrentTicket].done_flag){
-				*Conveyor[CurrentTicket].done_flag = 1;
-			}
-			--NumTickets;
-			if(0 == NumTickets){
-				CurrentTicket = -1;
-			} else {
-				CurrentTicket = next_ticket(CurrentTicket);
-			}
-		}
 	} else {
 		//TODO
-		iprintf("Reading I2C.\r\n");
+		write_str("Reading I2C.\r\n");
 		int wait;
 		int i;
 		int size = Conveyor[CurrentTicket].size;
@@ -143,27 +132,12 @@ static void start_conveyor(void){
 		i2c_set_7bit_address(I2C1, Conveyor[CurrentTicket].addr);
 		i2c_set_read_transfer_dir(I2C1);
 		i2c_enable_autoend(I2C1);
+
+		
+		i2c_dma_read(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
+		
 		/*start transfer*/
 		i2c_send_start(I2C1);
-		
-		for (i = 0; i < size; i++) {
-			while (i2c_received_data(I2C1) == 0);
-			Conveyor[CurrentTicket].data[i] = i2c_get_data(I2C1);
-		}
-
-		//TODO:
-		iprintf("Setting flag. CurrentTicket=%d NumTickets=%d\n\r", CurrentTicket, NumTickets);
-		if(CurrentTicket >= 0){
-			if(NULL != Conveyor[CurrentTicket].done_flag){
-				*Conveyor[CurrentTicket].done_flag = 1;
-			}
-			--NumTickets;
-			if(0 == NumTickets){
-				CurrentTicket = -1;
-			} else {
-				CurrentTicket = next_ticket(CurrentTicket);
-			}
-		}
 	}
 }
 
@@ -185,6 +159,8 @@ static void i2c_error_cleanup(void){
 	init_i2c();
 	dma_disable_channel(DMA1, DMA_CHANNEL6);
 	dma_disable_channel(DMA1, DMA_CHANNEL7);
+	i2c_disable_txdma(I2C1);
+	i2c_disable_rxdma(I2C1);
 	TicketState = TRANSFER_DONE;
 	if(CurrentTicket >= 0){
 		if(Conveyor[CurrentTicket].done_flag != NULL){
@@ -213,24 +189,27 @@ void i2c1_ev_exti23_isr(){
 		/* TXIS event - time to transmit register address
 		 * or do a repeated start for reading. */
 	} else if(I2C1_ISR & I2C_ISR_STOPF){
-		//TODO
-		iprintf("Stop condition interrupt CurrentTicket=%d  NumTickets=%d.\r\n", CurrentTicket, NumTickets);
+		//TODO:
+		write_str("Got Stop\r\n");
+		
 		/* Stop condition detected, indicating that the transfer is
 		 * complete. Wrap up the current ticket and start on the next
 		 * one. */
 		I2C1_ICR |= I2C_ICR_STOPCF;
-// 		TicketState = TRANSFER_DONE;
-// 		if(CurrentTicket >= 0){
-// 			if(NULL != Conveyor[CurrentTicket].done_flag){
-// 				*Conveyor[CurrentTicket].done_flag = 1;
-// 			}
-// 			--NumTickets;
-// 			if(0 == NumTickets){
-// 				CurrentTicket = -1;
-// 			} else {
-// 				CurrentTicket = next_ticket(CurrentTicket);
-// 			}
-// 		}
+		i2c_disable_txdma(I2C1);
+		i2c_disable_rxdma(I2C1);
+		TicketState = TRANSFER_DONE;
+		if(CurrentTicket >= 0){
+			if(NULL != Conveyor[CurrentTicket].done_flag){
+				*Conveyor[CurrentTicket].done_flag = 1;
+			}
+			--NumTickets;
+			if(0 == NumTickets){
+				CurrentTicket = -1;
+			} else {
+				CurrentTicket = next_ticket(CurrentTicket);
+			}
+		}
 	}
 }
 
@@ -276,6 +255,7 @@ int add_ticket_i2c(i2c_ticket_t *ticket){
 void init_i2c(void){
 	rcc_periph_clock_enable(RCC_I2C1);
 	rcc_periph_clock_enable(RCC_GPIOB);
+	rcc_periph_clock_enable(RCC_DMA1);
 	rcc_set_i2c_clock_hsi(I2C1);
 	
 	i2c_reset(I2C1);
