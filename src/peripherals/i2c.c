@@ -30,7 +30,7 @@
 /* I2C Conveyor Writing Steps
  * 1. start_conveyor() sets number of data = (1 + ticket size), direction=write, and slave address.
  *  --The TXIS interrupt is triggered after the slave address has been sent.--
- * 2. The TXIS handler sends the register address sets up DMA for the data.
+ * 2. The TXIS handler sends the register address and sets up DMA for the ticket data.
  *  --The TC interrupt is triggered when the transfer completes.--
  * 4. The TC handler sets the flag on the current ticket and starts the next ticket.
  */
@@ -41,7 +41,7 @@ static volatile bool I2CEnabled = false;
 /* Conveyor. */
 static volatile i2c_ticket_t Conveyor[I2C_CONVEYOR_SIZE];
 
-/* Current ticket. This variable stores the index of the current ticket.
+/* Index of the current ticket.
  * If it is negative, no tickets are currently being processed. */
 static volatile int8_t CurrentTicket = -1;
 
