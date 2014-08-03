@@ -8,5 +8,5 @@
 
 #include "led.h"
 #include "switches.h"
-
+#include "battery.h"
 #endif 

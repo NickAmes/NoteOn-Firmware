@@ -1,7 +1,7 @@
 OUTFILE:=../build/smartpen
 OUTDIR:=../build/
-OBJFILES:= peripherals/usart.o peripherals/newlib_stubs.o peripherals/clock.o  peripherals/systick.o peripherals/i2c.o
-OBJFILES+= board/switches.o board/led.o
+OBJFILES:= peripherals/usart.o peripherals/newlib_stubs.o peripherals/clock.o  peripherals/systick.o peripherals/i2c.o 
+OBJFILES+= peripherals/housekeeping.o board/switches.o board/led.o board/battery.o 
 
 all: main.c $(OBJFILES)
 	$(Q)mkdir -p ../build/ 
@@ -30,7 +30,12 @@ peripherals/systick.o: peripherals/systick.c peripherals/systick.h
 
 peripherals/i2c.o: peripherals/i2c.c peripherals/i2c.h peripherals/basepri.h
 	$(Q)$(CC) -c peripherals/i2c.c -o peripherals/i2c.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
-	
+
+board/battery.o: board/battery.c board/battery.h
+	$(Q)$(CC) -c board/battery.c -o board/battery.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
+
+peripherals/housekeeping.o: peripherals/housekeeping.c peripherals/housekeeping.h
+	$(Q)$(CC) -c peripherals/housekeeping.c -o peripherals/housekeeping.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
 clean:
 	rm -f *.o peripherals/*.o board/*.o
 	rm -f $(OUTFILE).elf $(OUTFILE).hex
