@@ -56,7 +56,7 @@ int init_battery(void){
  * state. */
 void shutdown_battery(void){
 	/* The IC goes into sleep mode automatically, so the only thing to do
-	 * is top the update_battery_voltage task. */
+	 * is to the update_battery_voltage() task. */
 	HousekeepingTasks[0] = 0;
 }
 
@@ -90,8 +90,8 @@ void update_battery_voltage(void){
 		ticket.data = &reset_cmd;
 		ticket.done_flag = 0;
 		add_ticket_i2c(&ticket);
-
-		if(volt_H_flag == 1 && volt_L_flag){
+		
+		if(volt_H_flag == 1 && volt_L_flag == 1){
 			BatteryVoltage = ((volt_L | (volt_H << 8)) * 22)/10;
 
 		} else {
