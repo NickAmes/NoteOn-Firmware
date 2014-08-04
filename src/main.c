@@ -11,8 +11,6 @@
 #include "peripherals/peripherals.h"
 #include "board/board.h"
 
-#include <libopencm3/stm32/gpio.h>
-
 /* Setup all peripherals.
  * The return value indicated the status of the board peripherals. The value
  * is a bitmask. Each peripheral is assigned a bit. If the bit is 0, the
@@ -31,15 +29,10 @@ uint8_t init_system(void);
  * init_system()'s return value. */
 void print_status_message(uint8_t status);
 
-void housekeeping_testfunct(void){
-	GPIOA_ODR ^= GPIO13;
-}
-
 int main(void){
 	uint8_t status;
 	status = init_system();
 	print_status_message(status);
-	HousekeepingTasks[1] = &housekeeping_testfunct;
 
 	uint8_t data[6];
 	volatile uint8_t flag;
@@ -57,48 +50,37 @@ int main(void){
 	add_ticket_i2c(&ticket);
 
 	led_on();
-	delay_ms(100);
+
 	while(1){
-		data[0] = 0;
-		data[1] = 0;
-		data[2] = 0;
-		data[3] = 0;
-		data[4] = 0;
-		data[5] = 0;
-		ticket.rw = I2C_READ;
-		ticket.reg = 0xA8;
-		ticket.size = 6;
-		flag = 0;
-		add_ticket_i2c(&ticket);
-		while(!flag){
-			/* Wait for data to be available. */
-			delay_ms(2);
-			if(flag)break;
-			iprintf("Waiting for flag\r\n");
-			delay_ms(100);
-		}
-		if(1 == flag){
-			iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
-		} else {
-			iprintf("I2C Error, Flag=%d\n\r", flag);
-		}
-		delay_ms(200);
-		
+		printf("Battery Voltage: %d\r\n", BatteryVoltage);
+		delay_ms(300);
 	}
-	
-// 	uint8_t data[2];
-// 	uint16_t voltage;
 // 	while(1){
-// 		data[0] = 0b00010000; /* Soft reset. */
-// 		write_i2c(I2C1, 0x70, 1, 1, data);
-// 		data[0] = 0b00010001; /* Operating mode, alarms disabled, voltage only. */
-// 		write_i2c(I2C1, 0x70, 0, 1, data);
-// 		for (int i = 0; i < 10000000; i++)
-// 			__asm__("nop");
-// 		read_i2c(I2C1, 0x70, 8, 1, &data[0]);
-// 		read_i2c(I2C1, 0x70, 9, 1, &data[1]);
-// 		voltage = data[0] | (data[1] << 8);
-// 		printf("I2C: %f\n\r", (float) voltage * 2.2e-3);
+// 		data[0] = 0;
+// 		data[1] = 0;
+// 		data[2] = 0;
+// 		data[3] = 0;
+// 		data[4] = 0;
+// 		data[5] = 0;
+// 		ticket.rw = I2C_READ;
+// 		ticket.reg = 0xA8;
+// 		ticket.size = 6;
+// 		flag = 0;
+// 		add_ticket_i2c(&ticket);
+// 		while(!flag){
+// 			/* Wait for data to be available. */
+// 			delay_ms(2);
+// 			if(flag)break;
+// 			iprintf("Waiting for flag\r\n");
+// 			delay_ms(100);
+// 		}
+// 		if(1 == flag){
+// 			iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
+// 		} else {
+// 			iprintf("I2C Error, Flag=%d\n\r", flag);
+// 		}
+// 		delay_ms(200);
+// 		
 // 	}
 }
 
@@ -150,7 +132,7 @@ uint8_t init_system(void){
 	/* Setup board peripheral drivers. */
 	init_led();
 	init_switches();
-	//if(init_battery())status |= ERROR_BATTERY;
+	if(init_battery())status |= ERROR_BATTERY;
 	if(1)status |= ERROR_IMU;
 	if(1)status |= ERROR_AUXACCEL;
 	if(1)status |= ERROR_BLUETOOTH;

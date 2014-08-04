@@ -31,9 +31,11 @@ int init_battery(void){
 	ticket.data = &id;
 	ticket.done_flag = &flag;
 	ticket.at_time = 0;
+	flag = 0;
 	add_ticket_i2c(&ticket);
 	while(0 == flag){
 		/* Wait for i2c transaction to complete. */
+		
 	}
 	if(I2C_DONE == flag){
 		if(0x14 == id){
@@ -52,10 +54,62 @@ int init_battery(void){
 
 /* Stop the battery monitoring task and put the gas gauge IC into a low-power
  * state. */
-void shutdown_battery(void);
+void shutdown_battery(void){
+	/* The IC goes into sleep mode automatically, so the only thing to do
+	 * is top the update_battery_voltage task. */
+	HousekeepingTasks[0] = 0;
+}
 
 /* Battery voltage update task. This is called automatically by the housekeeping
  * service. */
 void update_battery_voltage(void){
+	/* Due to an error in design revision 1, the gas gauge IC thinks that
+	 * a battery isn't present, and can't make multiple measurements of
+	 * the battery voltage.
+	 * However, the IC still measures the battery voltage on power-up, which
+	 * provides a work-around. Every measurement cycle, the IC is soft-reset.
+	 * It then spends 250ms taking a battery voltage measurement, and shuts
+	 * down. */
+	static uint8_t state; /* 0 = Reset the IC, 1 = fetch the value. */
+	/* high voltage byte and low voltage byte ticket flags. */
+	static uint8_t volt_H_flag, volt_L_flag;
+	/* reset command byte, high and low voltage bytes. */
+	static uint8_t reset_cmd, volt_H, volt_L; 
+	i2c_ticket_t ticket; /* I2C ticket. */
+	ticket.addr = 0x70;
+	ticket.at_time = 0;
+	ticket.size = 1;
+	reset_cmd = 0x10; /* Soft reset command. */
 
+	if(0 == state){
+		/* Tell the IC to perform a soft-reset and process the data from
+		 * the previous measurement. */
+		state = 1;
+		ticket.rw = I2C_WRITE;
+		ticket.reg = 1;
+		ticket.data = &reset_cmd;
+		ticket.done_flag = 0;
+		add_ticket_i2c(&ticket);
+
+		if(volt_H_flag == 1 && volt_L_flag){
+			BatteryVoltage = ((volt_L | (volt_H << 8)) * 22)/10;
+
+		} else {
+			BatteryVoltage = 0xFFFF;
+		}
+	} else {
+		/* Fetch the voltage data. */
+		state = 0;
+		ticket.rw = I2C_READ;
+		
+		ticket.reg = 8;
+		ticket.data = &volt_L;
+		ticket.done_flag = &volt_L_flag;
+		add_ticket_i2c(&ticket);
+
+		ticket.reg = 9;
+		ticket.data = &volt_H;
+		ticket.done_flag = &volt_H_flag;
+		add_ticket_i2c(&ticket);
+	}
 }
