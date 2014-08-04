@@ -14,7 +14,7 @@
 /* The current battery voltage in millivolts (mV).
  * This variable is updated periodically with new readings.
  * If an error occurs, or if no data is available, this will be 0xFFFF. */
-extern volatile uint16_t BatteryVoltage = 0xFFFF;
+extern volatile uint16_t BatteryVoltage;
 
 /* Start the battery monitoring task.
  * Returns 0 on success, -1 on error. */
@@ -23,6 +23,10 @@ int init_battery(void);
 /* Stop the battery monitoring task and put the gas gauge IC into a low-power
  * state. */
 void shutdown_battery(void);
+
+/* Battery voltage update task. This is called automatically by the housekeeping
+ * service. */
+void update_battery_voltage(void);
 
 
 #endif

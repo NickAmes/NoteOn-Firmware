@@ -11,12 +11,36 @@
 #include "peripherals/peripherals.h"
 #include "board/board.h"
 
-/* Setup all peripherals. */
-void init_system(void);
+#include <libopencm3/stm32/gpio.h>
+
+/* Setup all peripherals.
+ * The return value indicated the status of the board peripherals. The value
+ * is a bitmask. Each peripheral is assigned a bit. If the bit is 0, the
+ * peripheral is operating normally. If it is 1, the peripheral
+ * has malfunctioned. */
+uint8_t init_system(void);
+
+/* init_system() return value bits */
+#define ERROR_BATTERY   (1 << 0) /* STC3115 battery gas gauge. */
+#define ERROR_IMU       (1 << 1) /* LSM9DS0 IMU. */
+#define ERROR_AUXACCEL  (1 << 2) /* LIS3DSH auxiliary accelerometer. */
+#define ERROR_BLUETOOTH (1 << 3) /* nRF8001 bluetooth controller. */
+#define ERROR_MEMORY    (1 << 4) /* N25Q512A flash memory. */
+
+/* Print a status message describing the state of the board peripherals using
+ * init_system()'s return value. */
+void print_status_message(uint8_t status);
+
+void housekeeping_testfunct(void){
+	GPIOA_ODR ^= GPIO13;
+}
 
 int main(void){
-	init_system();
-	
+	uint8_t status;
+	status = init_system();
+	print_status_message(status);
+	HousekeepingTasks[1] = &housekeeping_testfunct;
+
 	uint8_t data[6];
 	volatile uint8_t flag;
 	i2c_ticket_t ticket;
@@ -88,21 +112,49 @@ static void welcome_message(void){
 	write_str(".\n\r");
 }
 
-/* Setup all peripherals. */
-void init_system(void){
+/* Print a status message describing the state of the board peripherals using
+ * init_system()'s return value. */
+void print_status_message(uint8_t status){
+	if(0 == status){
+		write_str("All peripherals successfully initialized.\n\r");
+	} else {
+		write_str("Peripheral Status:\n\r");
+		write_str("Gas Gauge            "); write_str((status & ERROR_BATTERY)?"FAIL\r\n":" OK\r\n");
+		write_str("IMU                  "); write_str((status & ERROR_IMU)?"FAIL\r\n":" OK\r\n");
+		write_str("Aux. Accelerometer   "); write_str((status & ERROR_AUXACCEL)?"FAIL\r\n":" OK\r\n");
+		write_str("Bluetooth            "); write_str((status & ERROR_BLUETOOTH)?"FAIL\r\n":" OK\r\n");
+		write_str("External Flash       "); write_str((status & ERROR_MEMORY)?"FAIL\r\n":" OK\r\n");
+	}
+}
+
+/* Setup all peripherals.
+ * The return value indicated the status of the board peripherals. The value
+ * is a bitmask. Each peripheral is assigned a bit. If the bit is 0, the
+ * peripheral is operating normally. If it is 1, the peripheral
+ * has malfunctioned. */
+uint8_t init_system(void){
+	uint8_t status = 0;
 	/* Misc. important setup tasks. */
 	SCB_CPACR |= ((3UL << 10*2)|(3UL << 11*2)); /* Enable FPU */
 	SCB_VTOR = 0x08000000; /* Set vector table location. (Makes interrupts work.) */
 	SCB_AIRCR = 0x05FA0300; /* Set 16 interrupt group priorities and 0 sub
 	                         * priorities. */
 
-	/* Setup peripherals. */
+	/* Setup on-chip peripherals. */
 	clock_72MHz_hse();
 	init_systick();
 	init_usart();
+	init_i2c();
+	init_housekeeping();
+
+	/* Setup board peripheral drivers. */
 	init_led();
 	init_switches();
-	init_i2c();
-
+	//if(init_battery())status |= ERROR_BATTERY;
+	if(1)status |= ERROR_IMU;
+	if(1)status |= ERROR_AUXACCEL;
+	if(1)status |= ERROR_BLUETOOTH;
+	if(1)status |= ERROR_MEMORY;
 	welcome_message();
+	return status;
 }

@@ -22,7 +22,10 @@
 /* Number of housekeeping tasks. */
 #define NUM_HOUSEKEEPING_TASKS 5
 
-/* Housekeeping task slots. */
+/* Housekeeping task slots.
+ * Allocations:
+ *   -Slot 0: battery.h
+ */
 extern void (*volatile HousekeepingTasks[NUM_HOUSEKEEPING_TASKS])(void);
 
 /* Initialize the housekeeping service. This must be called before using any
