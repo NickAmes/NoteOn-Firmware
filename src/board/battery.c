@@ -99,6 +99,9 @@ void update_battery_voltage(void){
 		}
 	} else {
 		/* Fetch the voltage data. */
+		volt_L_flag = 0;
+		volt_H_flag = 0;
+		
 		state = 0;
 		ticket.rw = I2C_READ;
 		

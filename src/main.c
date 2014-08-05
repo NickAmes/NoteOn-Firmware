@@ -54,6 +54,7 @@ int main(void){
 	while(1){
 		printf("Battery Voltage: %d\r\n", BatteryVoltage);
 		delay_ms(300);
+		reset_system();
 	}
 // 	while(1){
 // 		data[0] = 0;
