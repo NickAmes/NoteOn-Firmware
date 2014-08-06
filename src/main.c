@@ -29,6 +29,10 @@ uint8_t init_system(void);
  * init_system()'s return value. */
 void print_status_message(uint8_t status);
 
+/* Shutdown all board peripherals.
+ * TODO: uC shutdown and button wakeup. */
+void shutdown_system(void);
+
 int main(void){
 	uint8_t status;
 	status = init_system();
@@ -52,37 +56,32 @@ int main(void){
 	led_on();
 
 	while(1){
-		printf("Battery Voltage: %d\r\n", BatteryVoltage);
-		delay_ms(300);
-		reset_system();
+		data[0] = 0;
+		data[1] = 0;
+		data[2] = 0;
+		data[3] = 0;
+		data[4] = 0;
+		data[5] = 0;
+		ticket.rw = I2C_READ;
+		ticket.reg = 0xA8;
+		ticket.size = 6;
+		flag = 0;
+		add_ticket_i2c(&ticket);
+		while(!flag){
+			/* Wait for data to be available. */
+			delay_ms(2);
+			if(flag)break;
+			iprintf("Waiting for flag\r\n");
+			delay_ms(100);
+		}
+		if(1 == flag){
+			iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
+		} else {
+			iprintf("I2C Error, Flag=%d\n\r", flag);
+		}
+		delay_ms(200);
+
 	}
-// 	while(1){
-// 		data[0] = 0;
-// 		data[1] = 0;
-// 		data[2] = 0;
-// 		data[3] = 0;
-// 		data[4] = 0;
-// 		data[5] = 0;
-// 		ticket.rw = I2C_READ;
-// 		ticket.reg = 0xA8;
-// 		ticket.size = 6;
-// 		flag = 0;
-// 		add_ticket_i2c(&ticket);
-// 		while(!flag){
-// 			/* Wait for data to be available. */
-// 			delay_ms(2);
-// 			if(flag)break;
-// 			iprintf("Waiting for flag\r\n");
-// 			delay_ms(100);
-// 		}
-// 		if(1 == flag){
-// 			iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
-// 		} else {
-// 			iprintf("I2C Error, Flag=%d\n\r", flag);
-// 		}
-// 		delay_ms(200);
-// 		
-// 	}
 }
 
 /* Print a debugging welcome message using write_str(). */
@@ -140,4 +139,11 @@ uint8_t init_system(void){
 	if(1)status |= ERROR_MEMORY;
 	welcome_message();
 	return status;
+}
+
+/* Shutdown all board peripherals.
+ * TODO: uC shutdown and button wakeup. */
+void shutdown_system(void){
+	shutdown_battery();
+	//TODO: uC shutdown and button wakeup.
 }

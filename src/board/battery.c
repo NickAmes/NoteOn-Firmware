@@ -56,7 +56,7 @@ int init_battery(void){
  * state. */
 void shutdown_battery(void){
 	/* The IC goes into sleep mode automatically, so the only thing to do
-	 * is to the update_battery_voltage() task. */
+	 * is stop the update_battery_voltage() task. */
 	HousekeepingTasks[0] = 0;
 }
 
