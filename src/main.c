@@ -11,6 +11,9 @@
 #include "peripherals/peripherals.h"
 #include "board/board.h"
 
+//TODO
+#include <libopencm3/stm32/usb.h>
+
 /* Setup all peripherals.
  * The return value indicated the status of the board peripherals. The value
  * is a bitmask. Each peripheral is assigned a bit. If the bit is 0, the
@@ -38,54 +41,64 @@ int main(void){
 	status = init_system();
 	print_status_message(status);
 
-	uint8_t data[6];
-	volatile uint8_t flag;
-	i2c_ticket_t ticket;
-	ticket.done_flag = &flag;
-	ticket.at_time = 0;
-	
-	ticket.addr = 0x1D;
-	ticket.data = data;
-	
-	ticket.rw = I2C_WRITE;
-	ticket.reg = 0x20;
-	ticket.size = 1;
-	data[0] = 0x67;
-	add_ticket_i2c(&ticket);
-
-	flag = 0;
-	while(!flag){
-		/* Wait for transfer to complete before modifying data[0].*/
-	}
-	
-	led_on();
 	while(1){
-		data[0] = 0;
-		data[1] = 0;
-		data[2] = 0;
-		data[3] = 0;
-		data[4] = 0;
-		data[5] = 0;
-		ticket.rw = I2C_READ;
-		ticket.reg = 0xA8;
-		ticket.size = 6;
-		flag = 0;
-		add_ticket_i2c(&ticket);
-		while(!flag){
-			/* Wait for data to be available. */
-			delay_ms(2);
-			if(flag)break;
-			iprintf("Waiting for flag\r\n");
-			delay_ms(100);
-		}
-		if(1 == flag){
-			iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
-		} else {
-			iprintf("I2C Error, Flag=%d\n\r", flag);
-		}
-		delay_ms(200);
-		
+		iprintf("&USB_CNTR_REG is 0x%08X\n\r", USB_CNTR_REG);
+		iprintf("&USB_ISTR_REG is 0x%08X\n\r", USB_ISTR_REG);
+		iprintf("&USB_FNR_REG is 0x%08X\n\r", USB_FNR_REG);
+		iprintf("&USB_DADDR_REG is 0x%08X\n\r", USB_DADDR_REG);
+		iprintf("&USB_BTABLE_REG is 0x%08X\n\r", USB_BTABLE_REG);
+		iprintf("&USB_LPMCSR_REG is 0x%08X\n\r", USB_LPMCSR_REG);
+		delay_ms(1000);
 	}
+
+// 	uint8_t data[6];
+// 	volatile uint8_t flag;
+// 	i2c_ticket_t ticket;
+// 	ticket.done_flag = &flag;
+// 	ticket.at_time = 0;
+// 	
+// 	ticket.addr = 0x1D;
+// 	ticket.data = data;
+// 	
+// 	ticket.rw = I2C_WRITE;
+// 	ticket.reg = 0x20;
+// 	ticket.size = 1;
+// 	data[0] = 0x67;
+// 	add_ticket_i2c(&ticket);
+// 
+// 	flag = 0;
+// 	while(!flag){
+// 		/* Wait for transfer to complete before modifying data[0].*/
+// 	}
+// 	
+// 	led_on();
+// 	while(1){
+// 		data[0] = 0;
+// 		data[1] = 0;
+// 		data[2] = 0;
+// 		data[3] = 0;
+// 		data[4] = 0;
+// 		data[5] = 0;
+// 		ticket.rw = I2C_READ;
+// 		ticket.reg = 0xA8;
+// 		ticket.size = 6;
+// 		flag = 0;
+// 		add_ticket_i2c(&ticket);
+// 		while(!flag){
+// 			/* Wait for data to be available. */
+// 			delay_ms(2);
+// 			if(flag)break;
+// 			iprintf("Waiting for flag\r\n");
+// 			delay_ms(100);
+// 		}
+// 		if(1 == flag){
+// 			iprintf("X: %3hd   Y: %3hd   Z: %3hd\n\r", *((int16_t *) &data[0]), *((int16_t *) &data[2]), *((int16_t *) &data[4]));
+// 		} else {
+// 			iprintf("I2C Error, Flag=%d\n\r", flag);
+// 		}
+// 		delay_ms(200);
+// 		
+// 	}
 }
 
 /* Print a debugging welcome message using write_str(). */
@@ -132,7 +145,7 @@ uint8_t init_system(void){
 	init_usart();
 	init_i2c();
 	init_housekeeping();
-	init_usb();
+	//init_usb();
 
 	/* Setup board peripheral drivers. */
 	init_led();
