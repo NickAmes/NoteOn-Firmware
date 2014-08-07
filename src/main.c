@@ -46,15 +46,19 @@ int main(void){
 	
 	ticket.addr = 0x1D;
 	ticket.data = data;
-
+	
 	ticket.rw = I2C_WRITE;
 	ticket.reg = 0x20;
 	ticket.size = 1;
 	data[0] = 0x67;
 	add_ticket_i2c(&ticket);
 
+	flag = 0;
+	while(!flag){
+		/* Wait for transfer to complete before modifying data[0].*/
+	}
+	
 	led_on();
-
 	while(1){
 		data[0] = 0;
 		data[1] = 0;
@@ -80,7 +84,7 @@ int main(void){
 			iprintf("I2C Error, Flag=%d\n\r", flag);
 		}
 		delay_ms(200);
-
+		
 	}
 }
 
@@ -128,6 +132,7 @@ uint8_t init_system(void){
 	init_usart();
 	init_i2c();
 	init_housekeeping();
+	init_usb();
 
 	/* Setup board peripheral drivers. */
 	init_led();

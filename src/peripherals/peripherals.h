@@ -11,5 +11,6 @@
 #include "usart.h"
 #include "i2c.h"
 #include "housekeeping.h"
+#include "usb.h"
 
 #endif
