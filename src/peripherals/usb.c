@@ -5,11 +5,52 @@
  * Contains code from the libopencm3 project.                                 */
 #include "usb.h"
 #include <libopencm3/stm32/rcc.h>
-#include <libopencm3/stm32/gpio.h>
-#include <libopencm3/usb/usbd.h>
-#include <libopencm3/usb/cdc.h>
-#include <stdlib.h>
+#include <libopencm3/stm32/usb.h>
+//#include <libopencm3/usb/usbd.h>
+//#include <libopencm3/usb/cdc.h>
 
+#include "systick.c"
+
+/* Put the USB peripheral in the RESET state
+ * (address=0, only control endpoint enabled. */
+static void reset_usb(void);
+
+/* Initialize the USB interface.
+ * -48Mhz USB clock should already be set up.
+ * TODO: When, prerequisites.
+ * TODO: Enable USB only when a connection is detected. */
+void init_usb(void){
+	rcc_periph_clock_enable(RCC_USB);
+	rcc_peripheral_clear_reset(RCC_APB1RSTR, RCC_APB1RSTR_USBRST);
+	/* See STM32F302 Reference Manual section 30.5.2. */
+	SET_REG(USB_CNTR_REG, USB_CNTR_FRES); /* Activate power to USB peripheral
+	                                       * while keeping its reset signal asserted. */
+	delay_ms(1); /* Give the USB peripheral time to settle down. */
+	SET_REG(USB_CNTR_REG, 0); /* De-assert reset. */
+	SET_REG(USB_ISTR_REG, 0); /* Clear spurious interrupts. */
+	SET_REG(USB_BTABLE_REG, 0); /* Place the buffer description table at the
+	                             * beginning of packet memory. */
+
+	/* Enable USB IO pins. */
+	rcc_periph_clock_enable(RCC_GPIOA);
+	gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO11 | GPIO12);
+	/* Enable USB power detection pin. */
+	gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO8);
+
+	//TODO: Enable interrupts
+	reset_usb();
+}
+
+/* Put the USB peripheral in the RESET state
+ * (address=0, only control endpoint enabled). */
+static void reset_usb(void){
+	//TODO: Setup basic buffer description table.
+	//TODO: Setup endpoint 0
+	//TODO: Setup address 0.
+}
+
+
+/* Libopencm3 example */
 
 static const struct usb_device_descriptor dev = {
 	.bLength = USB_DT_DEVICE_SIZE,
@@ -222,21 +263,21 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 
 /* Initialize the USB interface.
  * TODO: When, prerequisites. */
-void init_usb(void){
-	int i;
-	usbd_device *usbd_dev;
-	
-	rcc_periph_clock_enable(RCC_USB);
-	rcc_periph_clock_enable(RCC_GPIOA);
-	gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO11 | GPIO12);
-	
-	usbd_dev = usbd_init(&stm32f103_usb_driver, &dev, &config, usb_strings,
-			     3, usbd_control_buffer, sizeof(usbd_control_buffer));
-	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
-	
-	for (i = 0; i < 0x800000; i++)
-		__asm__("nop");
-	
-	while (1)
-		usbd_poll(usbd_dev);
-}
+// void init_usb(void){
+// 	int i;
+// 	usbd_device *usbd_dev;
+// 	
+// 	rcc_periph_clock_enable(RCC_USB);
+// 	rcc_periph_clock_enable(RCC_GPIOA);
+// 	gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO11 | GPIO12);
+// 	
+// 	usbd_dev = usbd_init(&stm32f103_usb_driver, &dev, &config, usb_strings,
+// 			     3, usbd_control_buffer, sizeof(usbd_control_buffer));
+// 	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
+// 	
+// 	for (i = 0; i < 0x800000; i++)
+// 		__asm__("nop");
+// 	
+// 	while (1)
+// 		usbd_poll(usbd_dev);
+// }

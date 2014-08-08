@@ -41,16 +41,6 @@ int main(void){
 	status = init_system();
 	print_status_message(status);
 
-	while(1){
-		iprintf("&USB_CNTR_REG is 0x%08X\n\r", USB_CNTR_REG);
-		iprintf("&USB_ISTR_REG is 0x%08X\n\r", USB_ISTR_REG);
-		iprintf("&USB_FNR_REG is 0x%08X\n\r", USB_FNR_REG);
-		iprintf("&USB_DADDR_REG is 0x%08X\n\r", USB_DADDR_REG);
-		iprintf("&USB_BTABLE_REG is 0x%08X\n\r", USB_BTABLE_REG);
-		iprintf("&USB_LPMCSR_REG is 0x%08X\n\r", USB_LPMCSR_REG);
-		delay_ms(1000);
-	}
-
 // 	uint8_t data[6];
 // 	volatile uint8_t flag;
 // 	i2c_ticket_t ticket;
