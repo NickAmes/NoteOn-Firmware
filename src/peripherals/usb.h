@@ -7,10 +7,9 @@
 #define USH_H
 #include <libopencm3/stm32/gpio.h>
 
-/* For starters, replace the USART with a CDC-ACM usb function. */
-
 /* Initialize the USB interface.
- * TODO: When, prerequisites. */
+ * Right now, this only sets up the GPIO pin to detect the presence of
+ * USB power. */
 void init_usb(void);
 
 /* Returns 1 if USB cable is plugged in, 0 otherwise.

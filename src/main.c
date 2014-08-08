@@ -135,7 +135,7 @@ uint8_t init_system(void){
 	init_usart();
 	init_i2c();
 	init_housekeeping();
-	//init_usb();
+	init_usb();
 
 	/* Setup board peripheral drivers. */
 	init_led();

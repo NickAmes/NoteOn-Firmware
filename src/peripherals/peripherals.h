@@ -12,5 +12,6 @@
 #include "i2c.h"
 #include "housekeeping.h"
 #include "usb.h"
+#include "spi.h"
 
 #endif
