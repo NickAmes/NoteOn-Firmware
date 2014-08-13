@@ -40,7 +40,7 @@ typedef struct i2c_ticket_t {
 /* Number of tickets that the conveyor can hold. */
 #define I2C_CONVEYOR_SIZE 8
 
-/* Priority of I2C interrupts. This is true numeric value, not the
+/* Priority of I2C interrupts. This is the true numeric value, not the
  * hardware-specific shifted one. */
 #define I2C_IRQ_PRIORITY 8
 
