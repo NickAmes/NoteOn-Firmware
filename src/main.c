@@ -41,6 +41,29 @@ int main(void){
 	status = init_system();
 	print_status_message(status);
 
+	/* Testing SPI functionality with the external flash chip,
+	 * as it has a simpler protocol than the nRF8001. */
+	write_str("Testing SPI and external flash communication.\n\r");
+	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO6); /* MEMCS_N */
+	GPIOA_BSRR |= GPIO6; /* SS High. */
+	setup_spi(0, 0, SPI_CR1_BAUDRATE_FPCLK_DIV_16, false);
+	uint8_t txdata[4] = {0x9E, 0, 0, 0}; /* READ_ID Command */
+	uint8_t rxdata[4] = {0, 0, 0, 0};
+	GPIOA_BSRR |= (GPIO6 << 16); /* SS Low. */
+	rxtx_spi(&rxdata, &txdata, 4);
+	while(spi_is_busy()){
+		write_str("Waiting for SPI transaction to complete. \n\r");
+		delay_ms(50);
+		iprintf("SPI_CR1: 0x%X SPI_CR2: 0x%X SPI_SR: 0x%hX\n\r",SPI_CR1(SPI3), SPI_CR2(SPI3), SPI_SR(SPI3));
+	}
+	GPIOA_BSRR |= GPIO6; /* SS High. */
+
+	iprintf("READ_ID returned: 0x%X 0x%X 0x%X\n\r", rxdata[1], rxdata[2], rxdata[3]);
+
+	led_on();
+	while(1);
+
+	
 // 	uint8_t data[6];
 // 	volatile uint8_t flag;
 // 	i2c_ticket_t ticket;
@@ -135,6 +158,7 @@ uint8_t init_system(void){
 	init_usart();
 	init_i2c();
 	init_housekeeping();
+	init_spi();
 	init_usb();
 
 	/* Setup board peripheral drivers. */
