@@ -50,7 +50,9 @@ int main(void){
 	uint8_t txdata[4] = {0x9E, 0, 0, 0}; /* READ_ID Command */
 	uint8_t rxdata[4] = {0, 0, 0, 0};
 	GPIOA_BSRR |= (GPIO6 << 16); /* SS Low. */
-	rxtx_spi(&rxdata, &txdata, 4);
+	tx_spi(&txdata[0], 1);
+	while(spi_is_busy());
+	rx_spi(&rxdata[1], 3);
 	while(spi_is_busy()){
 		write_str("Waiting for SPI transaction to complete. \n\r");
 		delay_ms(50);
