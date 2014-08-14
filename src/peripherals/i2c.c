@@ -164,7 +164,8 @@ void i2c1_ev_exti23_isr(){
 			i2c_dma_write(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
 			TicketState = SENT_2ND_START;
 		} else {
-			/* If reading, do a repeated start before reading the data. */
+			/* If reading, do nothing here; the repeated start will
+			 * be handled by the TC event.*/
 			TicketState = SENT_REGISTER;
 		}
 		
