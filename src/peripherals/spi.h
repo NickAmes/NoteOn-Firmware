@@ -58,8 +58,8 @@ void release_spi(void);
  *   -CPHA is the clock phase (0 or 1)
  *   -baudrate is one of libopencm3's SPI_CR1_BAUDRATE_FPCLK_DIV_X values.
  *    Baudrates are derived from the low-speed peripheral clock APB1.
- *   -lsbfirst - if true, the least significant bit is transmitted first.   */
-void setup_spi(uint8_t cpol, uint8_t cpha, uint8_t baudrate, bool lsbfirst);
+ *   -firstbit is either SPI_CR1_MSBFIRST or SPI_CR1_LSBFIRST.   */
+void setup_spi(uint8_t cpol, uint8_t cpha, uint8_t baudrate, uint8_t firstbit);
 
 /* Evaluates to 1 when the SPI peripheral is busy transferring data. */
 #define spi_is_busy() (((SPI_SR(SPI3) & SPI_SR_FTLVL_FIFO_FULL) || (SPI_SR(SPI3) & SPI_SR_BSY))?1:0)
