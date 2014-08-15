@@ -65,12 +65,12 @@ void setup_spi(uint8_t cpol, uint8_t cpha, uint8_t baudrate, uint8_t firstbit);
 #define spi_is_busy() (((SPI_SR(SPI3) & SPI_SR_FTLVL_FIFO_FULL) || (SPI_SR(SPI3) & SPI_SR_BSY))?1:0)
 
 /* Transmit data using DMA. */
-void tx_spi(void *data, uint16_t size);
+void tx_spi(const void *data, uint16_t size);
 
 /* Receive data using DMA. */
 void rx_spi(void *data, uint16_t size);
 
 /* Simultaneously transmit and receive data using DMA. */
-void rxtx_spi(void *rxdata, void *txdata, uint16_t size);
+void rxtx_spi(void *rxdata, const void *txdata, uint16_t size);
 
 #endif

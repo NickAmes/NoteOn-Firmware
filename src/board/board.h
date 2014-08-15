@@ -9,4 +9,6 @@
 #include "led.h"
 #include "switches.h"
 #include "battery.h"
+#include "memory.h"
+
 #endif 

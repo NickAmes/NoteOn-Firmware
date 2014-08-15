@@ -15,8 +15,8 @@
 #include <libopencm3/stm32/usb.h>
 
 /* Setup all peripherals.
- * The return value indicated the status of the board peripherals. The value
- * is a bitmask. Each peripheral is assigned a bit. If the bit is 0, the
+ * The return value indicates the status of the board peripherals. The value
+ * is a bitmask in which each peripheral is assigned a bit. If the bit is 0, the
  * peripheral is operating normally. If it is 1, the peripheral
  * has malfunctioned. */
 uint8_t init_system(void);
@@ -40,27 +40,6 @@ int main(void){
 	uint8_t status;
 	status = init_system();
 	print_status_message(status);
-
-	/* Testing SPI functionality with the external flash chip,
-	 * as it has a simpler protocol than the nRF8001. */
-	write_str("Testing SPI and external flash communication.\n\r");
-	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO6); /* MEMCS_N */
-	GPIOA_BSRR |= GPIO6; /* SS High. */
-	setup_spi(0, 0, SPI_CR1_BAUDRATE_FPCLK_DIV_16, false);
-	uint8_t txdata[4] = {0x9E, 0, 0, 0}; /* READ_ID Command */
-	uint8_t rxdata[4] = {0, 0, 0, 0};
-	GPIOA_BSRR |= (GPIO6 << 16); /* SS Low. */
-	tx_spi(&txdata[0], 1);
-	while(spi_is_busy());
-	rx_spi(&rxdata[1], 3);
-	while(spi_is_busy()){
-		write_str("Waiting for SPI transaction to complete. \n\r");
-		delay_ms(50);
-		iprintf("SPI_CR1: 0x%X SPI_CR2: 0x%X SPI_SR: 0x%hX\n\r",SPI_CR1(SPI3), SPI_CR2(SPI3), SPI_SR(SPI3));
-	}
-	GPIOA_BSRR |= GPIO6; /* SS High. */
-
-	iprintf("READ_ID returned: 0x%X 0x%X 0x%X\n\r", rxdata[1], rxdata[2], rxdata[3]);
 
 	led_on();
 	while(1);
@@ -170,7 +149,7 @@ uint8_t init_system(void){
 	if(1)status |= ERROR_IMU;
 	if(1)status |= ERROR_AUXACCEL;
 	if(1)status |= ERROR_BLUETOOTH;
-	if(1)status |= ERROR_MEMORY;
+	if(init_memory())status |= ERROR_MEMORY;
 	welcome_message();
 	return status;
 }

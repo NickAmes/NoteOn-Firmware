@@ -134,7 +134,7 @@ static void cleanup_dma_spi(void){
 }
 
 /* Transmit data using DMA. */
-void tx_spi(void *data, uint16_t size){
+void tx_spi(const void *data, uint16_t size){
 	if(DmaCleanupNeeded)cleanup_dma_spi();
 	
 	dma_channel_reset(DMA1, DMA_CHANNEL3);
@@ -201,7 +201,7 @@ void rx_spi(void *data, uint16_t size){
 }
 
 /* Simultaneously transmit and receive data using DMA. */
-void rxtx_spi(void *rxdata, void *txdata, uint16_t size){
+void rxtx_spi(void *rxdata, const void *txdata, uint16_t size){
 	if(DmaCleanupNeeded)cleanup_dma_spi();
 
 	spi_enable_rx_dma(SPI3);

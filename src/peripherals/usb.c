@@ -6,6 +6,8 @@
 #include "usb.h"
 #include <libopencm3/stm32/rcc.h>
 
+/* TODO: Remember to request a 500mA current limit. */
+
 /* Initialize the USB interface.
  * Right now, this only sets up the GPIO pin to detect the presence of
  * USB power. */
