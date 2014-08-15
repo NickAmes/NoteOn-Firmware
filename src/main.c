@@ -14,6 +14,9 @@
 //TODO
 #include <libopencm3/stm32/usb.h>
 
+//TODO
+#include "string.h"
+
 /* Setup all peripherals.
  * The return value indicates the status of the board peripherals. The value
  * is a bitmask in which each peripheral is assigned a bit. If the bit is 0, the
@@ -36,11 +39,49 @@ void print_status_message(uint8_t status);
  * TODO: uC shutdown and button wakeup. */
 void shutdown_system(void);
 
+/* Random data for testing external flash memory. */
+const uint8_t randblock[] = {
+	156, 237, 134, 100,  41,  49, 100,  70,
+	162,  32,  72,  37,   7, 194,  31, 215,
+	 73,  65,  32,  11, 235,  90, 168, 196,
+	 19, 241,  48, 205, 248, 241, 139,  79,
+	128, 149,  41, 168, 248,  60,  34, 148,
+	 99,  17, 167, 159, 110, 135,  87,  73,
+	219, 164, 143, 140,  91,  78, 107,  80,
+	 90, 251, 197, 197, 232, 211, 149,  27,
+	169,  16, 231,  96, 144,  82,  55, 231,
+	142,  65,  41,  62, 221,  24, 151,  62,
+	 58, 251, 141,  31,  32, 233, 143, 148,
+	123,  66,  29, 148, 232,  34, 207,  34,
+	186,  94,  27, 124, 180,  11, 148,  84,
+	 51, 127, 217, 159, 241, 152, 118, 178,
+	 25, 193,  79, 246, 135,  84, 105, 104,
+	 84,  46,  67,   0, 178,   1, 227,  30
+};
+
 int main(void){
 	uint8_t status;
 	status = init_system();
 	print_status_message(status);
+	uint8_t buf[256];
 
+	write_str("Reading page 0\r\n");
+	read_mem(0, &buf[0], 256);
+	write_str("Page 0: \n\r");
+	for(int i=0;i<256;i++){
+		iprintf("0x%3d ", buf[i]);
+	}
+	fflush(stdout);
+	if(memcmp(buf, randblock, 256)){
+		write_str("Page 0 does not match randblock. \r\n");
+		delay_ms(3000);
+		write_str("Programming randblock into page 0...\r\n");
+		program_page_mem(0, &randblock[0]);
+		write_str("Programmed randblock into page 0.\r\n");
+	} else {
+		write_str("Page 0 matches randblock.\r\n");
+	}
+	
 	led_on();
 	while(1);
 

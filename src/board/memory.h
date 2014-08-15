@@ -40,16 +40,16 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size);
 /* Program a page (256 byte block).
  * WARNING: Programming a page can take up to 5 ms to complete.
  * This function will return quickly and the process
- * happens internally in the memory, but subsequent memory operations will
+ * happens internally in the chip, but subsequent memory operations will
  * stall until programming is finished. */
-void program_page_mem(uint32_t page, uint8_t *data);
+void program_page_mem(uint32_t page, const uint8_t *data);
 
 /* Erase the specified sector(s). The start and end sector numbers are an
  * inclusive range; the specified sectors and all in between will be erased.
  * Erasing sets all bits to 1.
  * WARNING: Erasing a sector can take up to 3 *seconds* to complete.
  * This function will return quickly and the process
- * happens internally in the memory, but subsequent memory operations will
+ * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
 void erase_sector_mem(uint16_t start, uint16_t end);
 
@@ -58,7 +58,7 @@ void erase_sector_mem(uint16_t start, uint16_t end);
  * Erasing sets all bits to 1.
  * WARNING: Erasing a subsector can take up to 800 ms to complete.
  * This function will return quickly and the process
- * happens internally in the memory, but subsequent memory operations will
+ * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
 void erase_subsector_mem(uint16_t start, uint16_t end);
 
@@ -67,7 +67,7 @@ void erase_subsector_mem(uint16_t start, uint16_t end);
  *   -passcode must be 0xDEAD to proceed.
  * WARNING: Erasing a die can take up to 4 *minutes* to complete.
  * This function will return quickly and the process
- * happens internally in the memory, but subsequent memory operations will
+ * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
 void erase_chip_mem(uint8_t die, uint16_t passcode);
 
