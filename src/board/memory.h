@@ -64,11 +64,10 @@ void erase_subsector_mem(uint16_t start, uint16_t end);
 
 /* Erase one of the chip's two 32MB dies.
  *   -die is either 0 (lower 32MB) or 1 (upper 32MB)
- *   -passcode must be 0xDEAD to proceed.
  * WARNING: Erasing a die can take up to 4 *minutes* to complete.
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
-void erase_chip_mem(uint8_t die, uint16_t passcode);
+void erase_chip_mem(uint8_t die);
 
 #endif

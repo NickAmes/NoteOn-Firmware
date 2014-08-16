@@ -31,6 +31,75 @@ static void request_spi_callback(void){
 	GotSPI = true;
 }
 
+/* Debugging function: print the values of the status, nonvolatile config.
+ * volatile config, enhanced volatile config, flag, and lock registers.
+ * This function assumes that SPI bus is already set up. */
+static void print_reg(void){
+	const uint8_t read_status_cmd = 0x05;
+	const uint8_t read_nonvol_conf_cmd = 0xB5;
+	const uint8_t read_vol_conf_cmd = 0x85;
+	const uint8_t read_enh_conf_cmd = 0x65;
+	const uint8_t read_flag_cmd = 0x70;
+	const uint8_t read_lock_cmd = 0xE8;
+
+	uint8_t status, vol_conf, enh_conf, flag, lock;
+	uint16_t nonvol_conf;
+
+	ss_low();
+	tx_spi(&read_status_cmd, 1);
+	while(spi_is_busy());
+	rx_spi(&status, 1);
+	while(spi_is_busy());
+	ss_high();
+	for(int i=0;i<24;i++)asm volatile("nop");
+
+	ss_low();
+	tx_spi(&read_nonvol_conf_cmd, 1);
+	while(spi_is_busy());
+	rx_spi(&nonvol_conf, 2);
+	while(spi_is_busy());
+	ss_high();
+	for(int i=0;i<24;i++)asm volatile("nop");
+
+	ss_low();
+	tx_spi(&read_vol_conf_cmd, 1);
+	while(spi_is_busy());
+	rx_spi(&vol_conf, 1);
+	while(spi_is_busy());
+	ss_high();
+	for(int i=0;i<24;i++)asm volatile("nop");
+
+	ss_low();
+	tx_spi(&read_enh_conf_cmd, 1);
+	while(spi_is_busy());
+	rx_spi(&enh_conf, 1);
+	while(spi_is_busy());
+	ss_high();
+	for(int i=0;i<24;i++)asm volatile("nop");
+
+	ss_low();
+	tx_spi(&read_flag_cmd, 1);
+	while(spi_is_busy());
+	rx_spi(&flag, 1);
+	while(spi_is_busy());
+	ss_high();
+	for(int i=0;i<24;i++)asm volatile("nop");
+
+	ss_low();
+	tx_spi(&read_lock_cmd, 1);
+	while(spi_is_busy());
+	rx_spi(&lock, 1);
+	while(spi_is_busy());
+	ss_high();
+	for(int i=0; i<24;i++)asm volatile("nop");
+
+	iprintf("N25Q512 External Flash Register Values\r\n");
+	iprintf("Status: 0x%02X  Nonvolatile Config: 0x%04X\r\n", status, nonvol_conf);
+	iprintf("Volatile Config: 0x%02X  Enhanced Config: 0x%02X\r\n", vol_conf, enh_conf);
+	iprintf("Flag: 0x%02X  Lock: 0x%02X\r\n", flag, lock);
+	fflush(stdout);
+}
+
 /* Get control of the SPI bus (by waiting until it's available) and perform
  * spi setup. */
 static void get_spi(void){
@@ -49,14 +118,32 @@ static void wait_chip_busy(void){
 	do {
 		ss_low();
 		tx_spi(&read_status_cmd, 1);
+		while(spi_is_busy());
 		rx_spi(&status_reg, 1);
+		while(spi_is_busy());
 		ss_high();
-		//TODO
-		iprintf("waiting for chip to not be busy. status_reg = 0x%X\n\r", status_reg);
-		delay_ms(50);
 	} while(status_reg & 0x01);
+	/* According to the datasheet, the flag register MUST be read to
+	 * complete a program/erase command. */
+	const uint8_t read_flag_cmd = 0x70;
+	const uint8_t clear_flag_cmd = 0x50;
+	uint8_t flag_reg;
+	ss_low();
+	tx_spi(&read_flag_cmd, 1);
+	while(spi_is_busy());
+	rx_spi(&flag_reg, 1);
+	while(spi_is_busy());
+	ss_high();
 }
-	
+
+/* Enable writing. */
+static void write_en(void){
+	const uint8_t write_en_cmd = 0x06;
+	ss_low();
+	tx_spi(&write_en_cmd, 1);
+	while(spi_is_busy());
+	ss_high();
+}
 	
 /* Setup required pins and check that the memory chip is responding correctly.
  * Returns 0 on success, -1 on error. */
@@ -87,39 +174,59 @@ int init_memory(void){
 		GotSPI = false;
 		return -1;
 	}
-
-	/* Enable writing. */
-	const uint8_t write_en_cmd = 0x06;
-	ss_low();
-	tx_spi(&write_en_cmd, 1);
-	while(spi_is_busy());
-	ss_high();
+	//TODO
+	delay_ms(20); /* Needed for debugging UART to synchronize. */
+	//TODO
+	iprintf("Got chip ID\r\n");
+	print_reg();
 
 	/* Perform a software reset. */
-// 	const uint8_t reset_enable_cmd = 0x66;
-// 	const uint8_t reset_mem_cmd = 0x99;
-// 	ss_low();
-// 	tx_spi(&reset_enable_cmd, 1);
-// 	while(spi_is_busy());
-// 	ss_high();
-// 	delay_ms(2);
-// 	ss_low();
-// 	tx_spi(&reset_mem_cmd, 1);
-// 	while(spi_is_busy());
-// 	ss_high();
-// 	delay_ms(2);
+	const uint8_t reset_enable_cmd = 0x66;
+	const uint8_t reset_mem_cmd = 0x99;
+	ss_low();
+	tx_spi(&reset_enable_cmd, 1);
+	while(spi_is_busy());
+	ss_high();
+	delay_ms(2);
+	ss_low();
+	tx_spi(&reset_mem_cmd, 1);
+	while(spi_is_busy());
+	ss_high();
+	delay_ms(2);
 
-	
+	//TODO
+	iprintf("Software Reset\r\n");
+	print_reg();
+
+	//TODO
+	write_en();
+	iprintf("Write Enable\r\n");
+	print_reg();
 
 	/* Set number of dummy clock cycles to 8. */
-// 	const uint8_t write_vol_config_cmd = 0x85;
-// 	const uint8_t vol_config_8_dummy_bits = 0x83;
-// 	ss_low();
-// 	tx_spi(&write_vol_config_cmd, 1);
-// 	while(spi_is_busy());
-// 	tx_spi(&vol_config_8_dummy_bits, 1);
-// 	while(spi_is_busy());
-// 	ss_high();
+	const uint8_t write_vol_config_cmd = 0x85;
+	const uint8_t vol_config_8_dummy_bits = 0x83;
+	write_en();
+	ss_low();
+	tx_spi(&write_vol_config_cmd, 1);
+	while(spi_is_busy());
+	tx_spi(&vol_config_8_dummy_bits, 1);
+	while(spi_is_busy());
+	ss_high();
+	//TODO
+	iprintf("Set dummy clock cycles to 8\r\n");
+	print_reg();
+
+	/* Enter 4-byte address mode. */
+	const uint8_t fourbyte_cmd = 0xB7;
+	write_en();
+	ss_low();
+	tx_spi(&fourbyte_cmd, 1);
+	while(spi_is_busy());
+	ss_high();
+	//TODO
+	iprintf("Entered 4-byte address mode\r\n");
+	print_reg();
 
 	/* TODO: Optimize driver strength and increase SPI speed. */
 	release_spi();
@@ -207,7 +314,7 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size){
  * stall until programming is finished. */
 void program_page_mem(uint32_t page, const uint8_t *data){
 	uint8_t cmd[5];
-	cmd[0] = 0x12; /* Four-byte address program. */
+	cmd[0] = 0x12; /* Four-byte address program cmd. */
 
 	if(NULL == data || page > 262143){
 		return;
@@ -215,6 +322,7 @@ void program_page_mem(uint32_t page, const uint8_t *data){
 
 	get_spi();
 	wait_chip_busy();
+	write_en();
 
 	convert_addr(page << 8, &cmd[1]);
 	ss_low();
@@ -233,7 +341,8 @@ void program_page_mem(uint32_t page, const uint8_t *data){
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
 void erase_sector_mem(uint16_t start, uint16_t end){
-
+	start = end; /* Suppress warnings */
+	start = start;
 }
 
 /* Erase the specified subsectors(s). The start and end subsector numbers are an
@@ -244,16 +353,16 @@ void erase_sector_mem(uint16_t start, uint16_t end){
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
 void erase_subsector_mem(uint16_t start, uint16_t end){
-
+	start = end; /* Suppress warnings */
+	start = start;
 }
 
 /* Erase one of the chip's two 32MB dies.
  *   -die is either 0 (lower 32MB) or 1 (upper 32MB)
- *   -passcode must be 0xDEAD to proceed.
  * WARNING: Erasing a die can take up to 4 *minutes* to complete.
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
-void erase_chip_mem(uint8_t die, uint16_t passcode){
-
+void erase_chip_mem(uint8_t die){
+	die = die;
 }
