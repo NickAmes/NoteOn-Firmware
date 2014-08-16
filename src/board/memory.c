@@ -243,10 +243,10 @@ void shutdown_memory(void){
 
 /* Convert a little-endian address into a big-endian sequence of bytes. */
 static void convert_addr(uint32_t little_address, uint8_t *big_bytes){
-	big_bytes[0] = little_address & 0x000000FF;
-	big_bytes[1] = (little_address >> 8) & 0x000000FF;
-	big_bytes[2] = (little_address >> 16) & 0x000000FF;
-	big_bytes[3] = (little_address >> 24) & 0x000000FF;
+	big_bytes[3] = little_address & 0x000000FF;
+	big_bytes[2] = (little_address >> 8) & 0x000000FF;
+	big_bytes[1] = (little_address >> 16) & 0x000000FF;
+	big_bytes[0] = (little_address >> 24) & 0x000000FF;
 }
 
 /* Read data from memory into the provided buffer. The address is in bytes,
@@ -255,8 +255,9 @@ static void convert_addr(uint32_t little_address, uint8_t *big_bytes){
 void read_mem(uint32_t address, uint8_t *data, uint32_t size){
 	uint8_t cmd[6]; /* 1 cmd byte + 4 addr bytes + 1 dummy byte. */
 	cmd[0] = 0x0C; /* 4-byte address STR fast read cmd. */
+	cmd[5] = 0; /* Dummy cycles. */
 
-	if(0 == size || (address + size) > 67108863 || NULL == data){
+	if(0 == size || (address + (size-1)) > 67108863 || NULL == data){
 		return;
 	}
 	get_spi();
@@ -287,7 +288,14 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size){
 		ss_high();
 	} else {
 		/* One read will suffice. */
-		convert_addr(address, &cmd[1]);
+		//TODO
+		write_str("Single Read\r\n");
+		//TODO
+		cmd[1] = 0;
+		cmd[2] = 0;
+		cmd[3] = 0;
+		cmd[4] = 0;
+		//convert_addr(address, &cmd[1]);
 		ss_low();
 		tx_spi(cmd, 6);
 		while(spi_is_busy());
@@ -306,7 +314,7 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size){
  * stall until programming is finished. */
 void program_page_mem(uint32_t page, const uint8_t *data){
 	uint8_t cmd[5];
-	cmd[0] = 0x12; /* Four-byte address program cmd. */
+	cmd[0] = 0x02; /* Four-byte address program cmd. */
 
 	if(NULL == data || page > 262143){
 		return;
@@ -316,13 +324,21 @@ void program_page_mem(uint32_t page, const uint8_t *data){
 	wait_chip_busy();
 	write_en();
 
-	convert_addr(page << 8, &cmd[1]);
+	//TODO
+	cmd[1] = 0;
+	cmd[2] = 0;
+	cmd[3] = 0;
+	cmd[4] = 0;
+	//convert_addr(page << 8, &cmd[1]);
 	ss_low();
 	tx_spi(cmd, 5);
 	while(spi_is_busy());
 	tx_spi(data, 256);
 	while(spi_is_busy());
 	ss_high();
+	//TODO:
+	delay_ms(10);
+	wait_chip_busy();
 }
 
 /* Erase the specified sector(s). The start and end sector numbers are an
