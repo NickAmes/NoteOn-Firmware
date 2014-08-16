@@ -293,7 +293,7 @@ void erase_sector_mem(uint16_t sector){
 		return;
 	}
 
-	convert_addr(sector, &cmd[1]);
+	convert_addr(sector << 16, &cmd[1]);
 	get_spi();
 	wait_chip_busy();
 	write_en();
@@ -317,7 +317,7 @@ void erase_subsector_mem(uint32_t subsector){
 	if(subsector > 16383){
 		return;
 	}
-	convert_addr(subsector, &cmd[1]);
+	convert_addr(subsector << 12, &cmd[1]);
 	get_spi();
 	wait_chip_busy();
 	write_en();

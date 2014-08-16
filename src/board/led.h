@@ -12,9 +12,12 @@
 void init_led(void);
 
 /* Turn the LED on. */
-#define led_on() (GPIOA_BSRR |= GPIO13)
+#define led_on() (GPIOA_BSRR = GPIO13)
 
 /* Turn the led off. */
-#define led_off() (GPIOA_BSRR |= (GPIO13 << 16))
+#define led_off() (GPIOA_BSRR = (GPIO13 << 16))
+
+/* Toggle the led. */
+#define led_toggle() (GPIO_BSRR = (GPIOA_ODR & GPIO13)?(GPIO13 << 16):(GPIO13))
 
 #endif

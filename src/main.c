@@ -86,21 +86,15 @@ int main(void){
 	
 
 	uint8_t buf[256];
-	//write_str("Programming randblock into page 0...\r\n");
-	//program_page_mem(0, &randblock[0]);
+	//write_str("Programming randblock into page 131071...\r\n");
+	program_page_mem(131071, &randblock[0]);
+	//write_str("Programming randblock into page 131072...\r\n");
+	program_page_mem(131072, &randblock[0]);
+	
+	//erase_die_mem(1);
 
-	//write_str("Erasing die 0\n\r");
-	//erase_die_mem(0);
-
-	write_str("Reading page 0\r\n");
-	read_mem(0, &buf[0], 256);
-	read_mem(0, &buf[0], 256);
-	read_mem(0, &buf[0], 256);
-	read_mem(0, &buf[0], 256);
-	read_mem(0, &buf[0], 256);
-	read_mem(0, &buf[0], 256);
-	read_mem(0, &buf[0], 256);
-	read_mem(0, &buf[0], 256);
+	write_str("Reading page 131071.5\r\n");
+	read_mem(33554304, &buf[0], 256);
 	
 
 	write_str("Page: \n\r");
@@ -109,7 +103,12 @@ int main(void){
 		if(255 == i)iprintf("\n");
 	}
 	fflush(stdout);
-	if(memcmp(buf, randblock, 256)){
+// 	if(memcmp(buf, randblock, 256)){
+// 		write_str("Page does not match randblock. \r\n");
+// 	} else {
+// 		write_str("Page matches randblock.\r\n");
+// 	}
+	if(memcmp(buf, randblock+128, 128) || memcmp(buf+128, randblock, 128)){
 		write_str("Page does not match randblock. \r\n");
 	} else {
 		write_str("Page matches randblock.\r\n");
