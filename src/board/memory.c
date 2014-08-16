@@ -336,13 +336,12 @@ void program_page_mem(uint32_t page, const uint8_t *data){
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
 void erase_sector_mem(uint16_t sector){
-	uint8_t cmd[5]; /* Although only three address bytes are used, the
-	                 * fourth is needed for convert_addr(). */
+	uint8_t cmd[4]; /* Only three address bytes are used. */
+	convert_addr(sector, &cmd[0]);
 	cmd[0] = 0xD8; /* Sector erase command. */
 	if(sector > 1023){
 		return;
 	}
-	convert_addr(sector, &cmd[1]);
 	get_spi();
 	wait_chip_busy();
 	write_en();
