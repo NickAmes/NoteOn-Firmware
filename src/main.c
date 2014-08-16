@@ -214,5 +214,6 @@ uint8_t init_system(void){
  * TODO: uC shutdown and button wakeup. */
 void shutdown_system(void){
 	shutdown_battery();
+	shutdown_memory();
 	//TODO: uC shutdown and button wakeup.
 }

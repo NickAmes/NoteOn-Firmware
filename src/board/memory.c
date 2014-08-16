@@ -288,14 +288,7 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size){
 		ss_high();
 	} else {
 		/* One read will suffice. */
-		//TODO
-		write_str("Single Read\r\n");
-		//TODO
-		cmd[1] = 0;
-		cmd[2] = 0;
-		cmd[3] = 0;
-		cmd[4] = 0;
-		//convert_addr(address, &cmd[1]);
+		convert_addr(address, &cmd[1]);
 		ss_low();
 		tx_spi(cmd, 6);
 		while(spi_is_busy());
@@ -320,25 +313,19 @@ void program_page_mem(uint32_t page, const uint8_t *data){
 		return;
 	}
 
+	convert_addr(page << 8, &cmd[1]);
 	get_spi();
 	wait_chip_busy();
 	write_en();
-
-	//TODO
-	cmd[1] = 0;
-	cmd[2] = 0;
-	cmd[3] = 0;
-	cmd[4] = 0;
-	//convert_addr(page << 8, &cmd[1]);
 	ss_low();
 	tx_spi(cmd, 5);
 	while(spi_is_busy());
 	tx_spi(data, 256);
 	while(spi_is_busy());
 	ss_high();
-	//TODO:
-	delay_ms(10);
-	wait_chip_busy();
+
+	release_spi();
+	GotSPI = false;
 }
 
 /* Erase the specified sector(s). The start and end sector numbers are an
@@ -348,9 +335,24 @@ void program_page_mem(uint32_t page, const uint8_t *data){
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
-void erase_sector_mem(uint16_t start, uint16_t end){
-	start = end; /* Suppress warnings */
-	start = start;
+void erase_sector_mem(uint16_t sector){
+	uint8_t cmd[5]; /* Although only three address bytes are used, the
+	                 * fourth is needed for convert_addr(). */
+	cmd[0] = 0xD8; /* Sector erase command. */
+	if(sector > 1023){
+		return;
+	}
+	convert_addr(sector, &cmd[1]);
+	get_spi();
+	wait_chip_busy();
+	write_en();
+	ss_low();
+	tx_spi(cmd, 4);
+	while(spi_is_busy());
+	ss_high();
+
+	release_spi();
+	GotSPI = false;
 }
 
 /* Erase the specified subsectors(s). The start and end subsector numbers are an
@@ -360,9 +362,23 @@ void erase_sector_mem(uint16_t start, uint16_t end){
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
-void erase_subsector_mem(uint16_t start, uint16_t end){
-	start = end; /* Suppress warnings */
-	start = start;
+void erase_subsector_mem(uint32_t subsector){
+	uint8_t cmd[5];
+	cmd[0] = 0x20; /* Subsector erase command. */
+	if(subsector > 16383){
+		return;
+	}
+	convert_addr(subsector, &cmd[1]);
+	get_spi();
+	wait_chip_busy();
+	write_en();
+	ss_low();
+	tx_spi(cmd, 5);
+	while(spi_is_busy());
+	ss_high();
+	
+	release_spi();
+	GotSPI = false;
 }
 
 /* Erase one of the chip's two 32MB dies.
@@ -372,5 +388,27 @@ void erase_subsector_mem(uint16_t start, uint16_t end){
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
 void erase_chip_mem(uint8_t die){
-	die = die;
+	uint8_t cmd[5];
+	cmd[0] = 0xC4; /* Die erase command. */
+	uint32_t addr; /* Die specification address. */
+	if(die > 1){
+		return;
+	}
+	
+	if(0 == die){
+		addr = 0;        /* Address in die 0 */
+	} else {
+		addr = 33554433; /* Address in die 1 */
+	}
+	convert_addr(addr, &cmd[1]);
+	get_spi();
+	wait_chip_busy();
+	write_en();
+	ss_low();
+	tx_spi(cmd, 5);
+	while(spi_is_busy());
+	ss_high();
+	
+	release_spi();
+	GotSPI = false;
 }

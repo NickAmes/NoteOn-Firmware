@@ -22,7 +22,10 @@
  * erasing/programming process is complete. The system should not be reset
  * until these operations have completed, or problems can occur if the
  * next power-up happens while these operations are in progress.
- * Use shutdown_memory() to ensure that this doesn't happen. */
+ * Use shutdown_memory() to ensure that this doesn't happen.
+ * WARNING: Bluetooth communication cannot happen during a memory stall, as
+ * both use the SPI bus. Avoid calling a memory function while an erase or
+ * program is in progress. */
 
 /* Setup required pins and check that the memory chip is responding correctly.
  * Returns 0 on success, -1 on error. */
@@ -51,7 +54,7 @@ void program_page_mem(uint32_t page, const uint8_t *data);
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
-void erase_sector_mem(uint16_t start, uint16_t end);
+void erase_sector_mem(uint16_t sector);
 
 /* Erase the specified subsectors(s). The start and end subsector numbers are an
  * inclusive range; the specified subsectors and all in between will be erased.
@@ -60,7 +63,7 @@ void erase_sector_mem(uint16_t start, uint16_t end);
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
-void erase_subsector_mem(uint16_t start, uint16_t end);
+void erase_subsector_mem(uint32_t subsector);
 
 /* Erase one of the chip's two 32MB dies.
  *   -die is either 0 (lower 32MB) or 1 (upper 32MB)
