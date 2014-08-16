@@ -89,9 +89,10 @@ int main(void){
 	//write_str("Programming randblock into page 0...\r\n");
 	//program_page_mem(0, &randblock[0]);
 
-	//write_str("Erasing sector 0\n\r");
-	//erase_sector_mem(0);
-	//write_str("Reading page 0\r\n");
+	//write_str("Erasing die 0\n\r");
+	//erase_die_mem(0);
+
+	write_str("Reading page 0\r\n");
 	read_mem(0, &buf[0], 256);
 	read_mem(0, &buf[0], 256);
 	read_mem(0, &buf[0], 256);
@@ -102,17 +103,17 @@ int main(void){
 	read_mem(0, &buf[0], 256);
 	
 
-// 	write_str("Page: \n\r");
-// 	for(int i=0;i<256;i++){
-// 		iprintf("%3d ", buf[i]);
-// 		if(255 == i)iprintf("\n");
-// 	}
-// 	fflush(stdout);
-// 	if(memcmp(buf, randblock, 256)){
-// 		write_str("Page does not match randblock. \r\n");
-// 	} else {
-// 		write_str("Page matches randblock.\r\n");
-// 	}
+	write_str("Page: \n\r");
+	for(int i=0;i<256;i++){
+		iprintf("%3d ", buf[i]);
+		if(255 == i)iprintf("\n");
+	}
+	fflush(stdout);
+	if(memcmp(buf, randblock, 256)){
+		write_str("Page does not match randblock. \r\n");
+	} else {
+		write_str("Page matches randblock.\r\n");
+	}
 
 	//shutdown_system();
 	

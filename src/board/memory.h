@@ -67,6 +67,6 @@ void erase_subsector_mem(uint32_t subsector);
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
-void erase_chip_mem(uint8_t die);
+void erase_die_mem(uint8_t die);
 
 #endif

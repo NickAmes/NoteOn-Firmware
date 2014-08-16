@@ -164,17 +164,6 @@ int init_memory(void){
 	ss_high();
 	delay_ms(2);
 
-	/* Set number of dummy clock cycles to 8. */
-	const uint8_t write_vol_config_cmd = 0x81;
-	const uint8_t vol_config_8_dummy_bits = 0x83;
-	write_en();
-	ss_low();
-	tx_spi(&write_vol_config_cmd, 1);
-	while(spi_is_busy());
-	tx_spi(&vol_config_8_dummy_bits, 1);
-	while(spi_is_busy());
-	ss_high();
-
 	/* Enter 4-byte address mode. */
 	const uint8_t fourbyte_cmd = 0xB7;
 	write_en();
@@ -217,8 +206,7 @@ static void convert_addr(uint32_t little_address, uint8_t *big_bytes){
  * be a multiple of 2. */
 void read_mem(uint32_t address, uint8_t *data, uint32_t size){
 	uint8_t cmd[6]; /* 1 cmd byte + 4 addr bytes + 1 dummy byte. */
-	//cmd[0] = 0x0C; /* 4-byte address STR fast read cmd. */
-	cmd[0] = 0x03; /* 4-byte address STR fast read cmd. */
+	cmd[0] = 0x03; /* 3 or 4-byte address read cmd. */
 	cmd[5] = 0; /* Dummy cycles. */
 
 	if(0 == size || (address + (size-1)) > 67108863 || NULL == data){
@@ -232,25 +220,25 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size){
 	if(   (address < 33554432) /* First address of 2nd die. */
 	   && ((address + (size - 1)) >= 33554432)){
 		/* TODO: Update as necessary. */
-// 		/* Two reads are needed. */
-// 		uint32_t first_size = 33554432 - address;
-// 		uint32_t second_size = size - first_size;
-// 		
-// 		convert_addr(address, &cmd[1]);
-// 		ss_low();
-// 		tx_spi(cmd, 6);
-// 		while(spi_is_busy());
-// 		rx_spi(data, first_size);
-// 		while(spi_is_busy());
-// 		ss_high();
-// 
-// 		convert_addr(33554432, &cmd[1]);
-// 		ss_low();
-// 		tx_spi(cmd, 6);
-// 		while(spi_is_busy());
-// 		rx_spi(data + first_size, second_size);
-// 		while(spi_is_busy());
-// 		ss_high();
+		/* Two reads are needed. */
+		uint32_t first_size = 33554432 - address;
+		uint32_t second_size = size - first_size;
+
+		convert_addr(address, &cmd[1]);
+		ss_low();
+		tx_spi(cmd, 5);
+		while(spi_is_busy());
+		rx_spi(data, first_size);
+		while(spi_is_busy());
+		ss_high();
+
+		convert_addr(33554432, &cmd[1]);
+		ss_low();
+		tx_spi(cmd, 5);
+		while(spi_is_busy());
+		rx_spi(data + first_size, second_size);
+		while(spi_is_busy());
+		ss_high();
 	} else {
 		/* One read will suffice. */
 		convert_addr(address, &cmd[1]);
@@ -348,7 +336,7 @@ void erase_subsector_mem(uint32_t subsector){
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
-void erase_chip_mem(uint8_t die){
+void erase_die_mem(uint8_t die){
 	uint8_t cmd[5];
 	cmd[0] = 0xC4; /* Die erase command. */
 	uint32_t addr; /* Die specification address. */
