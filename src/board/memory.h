@@ -47,18 +47,14 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size);
  * stall until programming is finished. */
 void program_page_mem(uint32_t page, const uint8_t *data);
 
-/* Erase the specified sector(s). The start and end sector numbers are an
- * inclusive range; the specified sectors and all in between will be erased.
- * Erasing sets all bits to 1.
+/* Erase the specified sector. Erasing sets all bits to 1.
  * WARNING: Erasing a sector can take up to 3 *seconds* to complete.
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
 void erase_sector_mem(uint16_t sector);
 
-/* Erase the specified subsectors(s). The start and end subsector numbers are an
- * inclusive range; the specified subsectors and all in between will be erased.
- * Erasing sets all bits to 1.
+/* Erase the specified subsectors. Erasing sets all bits to 1.
  * WARNING: Erasing a subsector can take up to 800 ms to complete.
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will

@@ -82,14 +82,16 @@ int main(void){
 	print_status_message(status);
 
 	uint8_t buf[256];
-	write_str("Programming randblock into page 0...\r\n");
-	program_page_mem(0, &randblock[0]);
+	//write_str("Programming randblock into page 0...\r\n");
+	//program_page_mem(0, &randblock[0]);
 
-	//write_str("Erasing sub sector 0\n\r");
-	//erase_subsector_mem(0);
+	//write_str("Erasing sector 0\n\r");
+	//erase_sector_mem(0);
 	write_str("Reading page 0\r\n");
 	read_mem(0, &buf[0], 256);
-	write_str("Page 0: \n\r");
+
+
+	write_str("Page: \n\r");
 	for(int i=0;i<256;i++){
 		iprintf("%3d ", buf[i]);
 		if(255 == i)iprintf("\n");

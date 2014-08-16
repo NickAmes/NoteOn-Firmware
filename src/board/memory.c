@@ -99,32 +99,18 @@ static void get_spi(void){
 /* Wait until an internal chip write operation has completed.
  * This function assumes that SPI bus has already been set up. */
 static void wait_chip_busy(void){
-	const uint8_t read_status_cmd = 0x05;
-	uint8_t status_reg;
+	const uint8_t read_flag_cmd = 0x70;
+	uint8_t flag_reg;
 	do {
 		ss_low();
-		tx_spi(&read_status_cmd, 1);
+		tx_spi(&read_flag_cmd, 1);
 		while(spi_is_busy());
-		rx_spi(&status_reg, 1);
+		rx_spi(&flag_reg, 1);
 		while(spi_is_busy());
 		ss_high();
-	} while(status_reg & 0x01);
-	/* According to the datasheet, the flag register MUST be read to
-	 * complete a program/erase command. */
-	const uint8_t read_flag_cmd = 0x70;
-	const uint8_t clear_flag_cmd = 0x50;
-	uint8_t flag_reg;
-	ss_low();
-	tx_spi(&read_flag_cmd, 1);
-	while(spi_is_busy());
-	rx_spi(&flag_reg, 1);
-	while(spi_is_busy());
-	ss_high();
-
-	ss_low();
-	tx_spi(&clear_flag_cmd, 1);
-	while(spi_is_busy());
-	ss_high();
+		print_reg();
+		delay_ms(100);
+	} while(!(flag_reg & 0x80));
 }
 
 /* Enable writing. */
@@ -247,6 +233,7 @@ static void convert_addr(uint32_t little_address, uint8_t *big_bytes){
 	big_bytes[2] = (little_address >> 8) & 0x000000FF;
 	big_bytes[1] = (little_address >> 16) & 0x000000FF;
 	big_bytes[0] = (little_address >> 24) & 0x000000FF;
+	iprintf("Converted Address: 0x%2X 0x%2X 0x%2X 0x%2X\r\n", big_bytes[0], big_bytes[1], big_bytes[2], big_bytes[3]);
 }
 
 /* Read data from memory into the provided buffer. The address is in bytes,
@@ -328,25 +315,24 @@ void program_page_mem(uint32_t page, const uint8_t *data){
 	GotSPI = false;
 }
 
-/* Erase the specified sector(s). The start and end sector numbers are an
- * inclusive range; the specified sectors and all in between will be erased.
- * Erasing sets all bits to 1.
+/* Erase the specified sector. Erasing sets all bits to 1.
  * WARNING: Erasing a sector can take up to 3 *seconds* to complete.
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
  * stall until erasing is finished. */
 void erase_sector_mem(uint16_t sector){
-	uint8_t cmd[4]; /* Only three address bytes are used. */
-	convert_addr(sector, &cmd[0]);
+	uint8_t cmd[5];
 	cmd[0] = 0xD8; /* Sector erase command. */
 	if(sector > 1023){
 		return;
 	}
+
+	convert_addr(sector, &cmd[1]);
 	get_spi();
 	wait_chip_busy();
 	write_en();
 	ss_low();
-	tx_spi(cmd, 4);
+	tx_spi(cmd, 5);
 	while(spi_is_busy());
 	ss_high();
 
@@ -354,9 +340,7 @@ void erase_sector_mem(uint16_t sector){
 	GotSPI = false;
 }
 
-/* Erase the specified subsectors(s). The start and end subsector numbers are an
- * inclusive range; the specified subsectors and all in between will be erased.
- * Erasing sets all bits to 1.
+/* Erase the specified subsectors. Erasing sets all bits to 1.
  * WARNING: Erasing a subsector can take up to 800 ms to complete.
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will
