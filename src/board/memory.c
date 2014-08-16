@@ -32,7 +32,7 @@ static void request_spi_callback(void){
 }
 
 /* Debugging function: print the values of the status, nonvolatile config.
- * volatile config, enhanced volatile config, flag, and lock registers.
+ * volatile config, enhanced volatile config, and flag registers.
  * This function assumes that SPI bus is already set up. */
 static void print_reg(void){
 	const uint8_t read_status_cmd = 0x05;
@@ -40,9 +40,8 @@ static void print_reg(void){
 	const uint8_t read_vol_conf_cmd = 0x85;
 	const uint8_t read_enh_conf_cmd = 0x65;
 	const uint8_t read_flag_cmd = 0x70;
-	const uint8_t read_lock_cmd = 0xE8;
 
-	uint8_t status, vol_conf, enh_conf, flag, lock;
+	uint8_t status, vol_conf, enh_conf, flag;
 	uint16_t nonvol_conf;
 
 	ss_low();
@@ -51,7 +50,6 @@ static void print_reg(void){
 	rx_spi(&status, 1);
 	while(spi_is_busy());
 	ss_high();
-	for(int i=0;i<24;i++)asm volatile("nop");
 
 	ss_low();
 	tx_spi(&read_nonvol_conf_cmd, 1);
@@ -59,7 +57,6 @@ static void print_reg(void){
 	rx_spi(&nonvol_conf, 2);
 	while(spi_is_busy());
 	ss_high();
-	for(int i=0;i<24;i++)asm volatile("nop");
 
 	ss_low();
 	tx_spi(&read_vol_conf_cmd, 1);
@@ -67,7 +64,6 @@ static void print_reg(void){
 	rx_spi(&vol_conf, 1);
 	while(spi_is_busy());
 	ss_high();
-	for(int i=0;i<24;i++)asm volatile("nop");
 
 	ss_low();
 	tx_spi(&read_enh_conf_cmd, 1);
@@ -75,7 +71,6 @@ static void print_reg(void){
 	rx_spi(&enh_conf, 1);
 	while(spi_is_busy());
 	ss_high();
-	for(int i=0;i<24;i++)asm volatile("nop");
 
 	ss_low();
 	tx_spi(&read_flag_cmd, 1);
@@ -83,20 +78,11 @@ static void print_reg(void){
 	rx_spi(&flag, 1);
 	while(spi_is_busy());
 	ss_high();
-	for(int i=0;i<24;i++)asm volatile("nop");
-
-	ss_low();
-	tx_spi(&read_lock_cmd, 1);
-	while(spi_is_busy());
-	rx_spi(&lock, 1);
-	while(spi_is_busy());
-	ss_high();
-	for(int i=0; i<24;i++)asm volatile("nop");
 
 	iprintf("N25Q512 External Flash Register Values\r\n");
 	iprintf("Status: 0x%02X  Nonvolatile Config: 0x%04X\r\n", status, nonvol_conf);
 	iprintf("Volatile Config: 0x%02X  Enhanced Config: 0x%02X\r\n", vol_conf, enh_conf);
-	iprintf("Flag: 0x%02X  Lock: 0x%02X\r\n", flag, lock);
+	iprintf("Flag: 0x%02X\r\n", flag);
 	fflush(stdout);
 }
 
@@ -134,6 +120,11 @@ static void wait_chip_busy(void){
 	rx_spi(&flag_reg, 1);
 	while(spi_is_busy());
 	ss_high();
+
+	ss_low();
+	tx_spi(&clear_flag_cmd, 1);
+	while(spi_is_busy());
+	ss_high();
 }
 
 /* Enable writing. */
@@ -154,6 +145,7 @@ int init_memory(void){
 	/* Setup SS pin (net MEMCS_N in schematic). */
 	rcc_periph_clock_enable(RCC_GPIOA);
 	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO6);
+	gpio_set_output_options(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, GPIO6);
 	ss_high();
 
 	get_spi();
@@ -204,7 +196,7 @@ int init_memory(void){
 	print_reg();
 
 	/* Set number of dummy clock cycles to 8. */
-	const uint8_t write_vol_config_cmd = 0x85;
+	const uint8_t write_vol_config_cmd = 0x81;
 	const uint8_t vol_config_8_dummy_bits = 0x83;
 	write_en();
 	ss_low();
