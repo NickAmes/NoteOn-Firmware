@@ -13,10 +13,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-//TODO
-#include "../peripherals/usart.h"
-#include <stdio.h>
-
 /* Bring memory SS pin high. */
 #define ss_high() (GPIOA_BSRR |= GPIO6)
 
@@ -34,7 +30,7 @@ static void request_spi_callback(void){
 /* Debugging function: print the values of the status, nonvolatile config.
  * volatile config, enhanced volatile config, and flag registers.
  * This function assumes that SPI bus is already set up. */
-static void print_reg(void){
+/*static void print_reg(void){
 	const uint8_t read_status_cmd = 0x05;
 	const uint8_t read_nonvol_conf_cmd = 0xB5;
 	const uint8_t read_vol_conf_cmd = 0x85;
@@ -83,7 +79,7 @@ static void print_reg(void){
 	iprintf("Volatile Config: 0x%02X  Enhanced Config: 0x%02X\r\n", vol_conf, enh_conf);
 	iprintf("Flag: 0x%02X\r\n", flag);
 	fflush(stdout);
-}
+}*/
 
 /* Get control of the SPI bus (by waiting until it's available) and perform
  * spi setup. */
@@ -92,7 +88,7 @@ static void get_spi(void){
 	while(!GotSPI){
 		/* Wait */
 	}
-	setup_spi(0, 0, SPI_CR1_BAUDRATE_FPCLK_DIV_16, SPI_CR1_MSBFIRST);
+	setup_spi(0, 0, SPI_CR1_BAUDRATE_FPCLK_DIV_2, SPI_CR1_MSBFIRST);
 }
 
 /* Wait until an internal chip write operation has completed.
@@ -219,7 +215,6 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size){
 	 * so a such a read must be broken into two. */
 	if(   (address < 33554432) /* First address of 2nd die. */
 	   && ((address + (size - 1)) >= 33554432)){
-		/* TODO: Update as necessary. */
 		/* Two reads are needed. */
 		uint32_t first_size = 33554432 - address;
 		uint32_t second_size = size - first_size;
