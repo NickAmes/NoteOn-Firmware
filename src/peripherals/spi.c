@@ -36,12 +36,14 @@ void init_spi(void){
  * function must not be called by the driver that currently
  * controls the peripheral. */
 void request_spi(void (*spi_available_callback)(void)){
-	if(PeripheralInUse){
-		SpiWaitingCallback = spi_available_callback;
-	} else {
-		PeripheralInUse = true;
-		spi_available_callback();
-	}
+	//TODO
+	spi_available_callback();
+// 	if(PeripheralInUse){
+// 		SpiWaitingCallback = spi_available_callback;
+// 	} else {
+// 		PeripheralInUse = true;
+// 		spi_available_callback();
+// 	}
 }
 
 /* Used to determine if cleanup is needed between DMA transfers. */
@@ -65,13 +67,14 @@ static void disable_and_reset_spi_properly(void){
  * be started before this function returns. This function should be called
  * whenever the bus can be released, to prevent one driver from hogging the bus. */
 void release_spi(void){
-	disable_and_reset_spi_properly();
-	PeripheralInUse = false;
-	if(NULL != SpiWaitingCallback){
-		PeripheralInUse = true;
-		SpiWaitingCallback();
-		SpiWaitingCallback = NULL;
-	}
+	//TODO
+// 	disable_and_reset_spi_properly();
+// 	PeripheralInUse = false;
+// 	if(NULL != SpiWaitingCallback){
+// 		PeripheralInUse = true;
+// 		SpiWaitingCallback();
+// 		SpiWaitingCallback = NULL;
+// 	}
 }
 
 /* Setup the SPI bus.  This function may cause spurious signals on the SPI bus,

@@ -25,7 +25,7 @@
  * Use shutdown_memory() to ensure that this doesn't happen.
  * WARNING: Bluetooth communication cannot happen during a memory stall, as
  * both use the SPI bus. Avoid calling a memory function while an erase or
- * program is in progress. */
+ * program operation is in progress. */
 
 /* Setup required pins and check that the memory chip is responding correctly.
  * Returns 0 on success, -1 on error. */

@@ -78,7 +78,6 @@ static void print_reg(void){
 	rx_spi(&flag, 1);
 	while(spi_is_busy());
 	ss_high();
-
 	iprintf("N25Q512 External Flash Register Values\r\n");
 	iprintf("Status: 0x%02X  Nonvolatile Config: 0x%04X\r\n", status, nonvol_conf);
 	iprintf("Volatile Config: 0x%02X  Enhanced Config: 0x%02X\r\n", vol_conf, enh_conf);
@@ -100,17 +99,15 @@ static void get_spi(void){
  * This function assumes that SPI bus has already been set up. */
 static void wait_chip_busy(void){
 	const uint8_t read_flag_cmd = 0x70;
-	uint8_t flag_reg;
+	uint8_t flag;
 	do {
 		ss_low();
 		tx_spi(&read_flag_cmd, 1);
 		while(spi_is_busy());
-		rx_spi(&flag_reg, 1);
+		rx_spi(&flag, 1);
 		while(spi_is_busy());
 		ss_high();
-		print_reg();
-		delay_ms(100);
-	} while(!(flag_reg & 0x80));
+	} while(!(flag & 0x80));
 }
 
 /* Enable writing. */
@@ -152,11 +149,6 @@ int init_memory(void){
 		GotSPI = false;
 		return -1;
 	}
-	//TODO
-	delay_ms(20); /* Needed for debugging UART to synchronize. */
-	//TODO
-	iprintf("Got chip ID\r\n");
-	print_reg();
 
 	/* Perform a software reset. */
 	const uint8_t reset_enable_cmd = 0x66;
@@ -172,15 +164,6 @@ int init_memory(void){
 	ss_high();
 	delay_ms(2);
 
-	//TODO
-	iprintf("Software Reset\r\n");
-	print_reg();
-
-	//TODO
-	write_en();
-	iprintf("Write Enable\r\n");
-	print_reg();
-
 	/* Set number of dummy clock cycles to 8. */
 	const uint8_t write_vol_config_cmd = 0x81;
 	const uint8_t vol_config_8_dummy_bits = 0x83;
@@ -191,9 +174,6 @@ int init_memory(void){
 	tx_spi(&vol_config_8_dummy_bits, 1);
 	while(spi_is_busy());
 	ss_high();
-	//TODO
-	iprintf("Set dummy clock cycles to 8\r\n");
-	print_reg();
 
 	/* Enter 4-byte address mode. */
 	const uint8_t fourbyte_cmd = 0xB7;
@@ -202,9 +182,6 @@ int init_memory(void){
 	tx_spi(&fourbyte_cmd, 1);
 	while(spi_is_busy());
 	ss_high();
-	//TODO
-	iprintf("Entered 4-byte address mode\r\n");
-	print_reg();
 
 	/* TODO: Optimize driver strength and increase SPI speed. */
 	release_spi();
@@ -233,7 +210,6 @@ static void convert_addr(uint32_t little_address, uint8_t *big_bytes){
 	big_bytes[2] = (little_address >> 8) & 0x000000FF;
 	big_bytes[1] = (little_address >> 16) & 0x000000FF;
 	big_bytes[0] = (little_address >> 24) & 0x000000FF;
-	iprintf("Converted Address: 0x%2X 0x%2X 0x%2X 0x%2X\r\n", big_bytes[0], big_bytes[1], big_bytes[2], big_bytes[3]);
 }
 
 /* Read data from memory into the provided buffer. The address is in bytes,
@@ -241,7 +217,8 @@ static void convert_addr(uint32_t little_address, uint8_t *big_bytes){
  * be a multiple of 2. */
 void read_mem(uint32_t address, uint8_t *data, uint32_t size){
 	uint8_t cmd[6]; /* 1 cmd byte + 4 addr bytes + 1 dummy byte. */
-	cmd[0] = 0x0C; /* 4-byte address STR fast read cmd. */
+	//cmd[0] = 0x0C; /* 4-byte address STR fast read cmd. */
+	cmd[0] = 0x03; /* 4-byte address STR fast read cmd. */
 	cmd[5] = 0; /* Dummy cycles. */
 
 	if(0 == size || (address + (size-1)) > 67108863 || NULL == data){
@@ -254,30 +231,31 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size){
 	 * so a such a read must be broken into two. */
 	if(   (address < 33554432) /* First address of 2nd die. */
 	   && ((address + (size - 1)) >= 33554432)){
-		/* Two reads are needed. */
-		uint32_t first_size = 33554432 - address;
-		uint32_t second_size = size - first_size;
-		
-		convert_addr(address, &cmd[1]);
-		ss_low();
-		tx_spi(cmd, 6);
-		while(spi_is_busy());
-		rx_spi(data, first_size);
-		while(spi_is_busy());
-		ss_high();
-
-		convert_addr(33554432, &cmd[1]);
-		ss_low();
-		tx_spi(cmd, 6);
-		while(spi_is_busy());
-		rx_spi(data + first_size, second_size);
-		while(spi_is_busy());
-		ss_high();
+		/* TODO: Update as necessary. */
+// 		/* Two reads are needed. */
+// 		uint32_t first_size = 33554432 - address;
+// 		uint32_t second_size = size - first_size;
+// 		
+// 		convert_addr(address, &cmd[1]);
+// 		ss_low();
+// 		tx_spi(cmd, 6);
+// 		while(spi_is_busy());
+// 		rx_spi(data, first_size);
+// 		while(spi_is_busy());
+// 		ss_high();
+// 
+// 		convert_addr(33554432, &cmd[1]);
+// 		ss_low();
+// 		tx_spi(cmd, 6);
+// 		while(spi_is_busy());
+// 		rx_spi(data + first_size, second_size);
+// 		while(spi_is_busy());
+// 		ss_high();
 	} else {
 		/* One read will suffice. */
 		convert_addr(address, &cmd[1]);
 		ss_low();
-		tx_spi(cmd, 6);
+		tx_spi(cmd, 5);
 		while(spi_is_busy());
 		rx_spi(data, size);
 		while(spi_is_busy());
