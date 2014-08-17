@@ -33,7 +33,7 @@ int init_battery(void){
 	ticket.at_time = 0;
 	flag = 0;
 	add_ticket_i2c(&ticket);
-	while(0 == flag){
+	while(I2C_BUSY == flag){
 		/* Wait for i2c transaction to complete. */
 		
 	}
@@ -91,7 +91,7 @@ void update_battery_voltage(void){
 		ticket.done_flag = 0;
 		add_ticket_i2c(&ticket);
 		
-		if(volt_H_flag == 1 && volt_L_flag == 1){
+		if(volt_H_flag == I2C_DONE && volt_L_flag == I2C_DONE){
 			BatteryVoltage = ((volt_L | (volt_H << 8)) * 22)/10;
 
 		} else {

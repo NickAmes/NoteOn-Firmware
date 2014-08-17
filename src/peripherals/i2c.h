@@ -22,7 +22,8 @@ typedef struct i2c_ticket_t {
 	volatile uint8_t *data; /* Data to be transferred - this must not be NULL. */
 	uint8_t size; /* Number of bytes to be transferred. */
 	volatile uint8_t *done_flag; /* The flag will be set to 1 when the transaction is
-	                              * complete, or to 2 if an error occurs. This field
+	                              * complete, to 2 if an error occurs,
+				      * or to 3 if the conveyor is full. This field
 			              * may be NULL. */
 	volatile uint32_t *at_time;  /* If not NULL, this will be set the the value of
 	                              * SystemTime at the moment the transfer was
@@ -34,15 +35,17 @@ typedef struct i2c_ticket_t {
 #define I2C_READ 1
 
 /* i2c_ticket_t->done_flag values */
+#define I2C_BUSY 0
 #define I2C_DONE 1
 #define I2C_ERROR 2
+#define I2C_FULL 3
 
 /* Number of tickets that the conveyor can hold. */
 #define I2C_CONVEYOR_SIZE 8
 
 /* Priority of I2C interrupts. This is the true numeric value, not the
  * hardware-specific shifted one. */
-#define I2C_IRQ_PRIORITY 8
+#define I2C_IRQ_PRIORITY 4
 
 /* Add a ticket to the conveyor. The ticket will be copied (and therefore
  * doesn't need to exist after the function call) but the data will not.

@@ -228,6 +228,9 @@ int add_ticket_i2c(i2c_ticket_t *ticket){
 	                                * higher priority ones to proceed. */
 	if(I2C_CONVEYOR_SIZE == NumTickets){
 		set_basepri(save_basepri);
+		if(NULL != ticket->done_flag){
+			*ticket->done_flag = I2C_FULL;
+		}
 		return -2; /* Conveyor is full. */
 	}
 	int ticket_index = open_ticket();
