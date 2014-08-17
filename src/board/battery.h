@@ -11,6 +11,9 @@
 #define BATTERY_H
 #include <stdint.h>
 
+/* Battery voltage service housekeeping task slot. */
+#define BATTERY_HK_SLOT 0
+
 /* The current battery voltage in millivolts (mV).
  * This variable is updated periodically with new readings.
  * If an error occurs, or if no data is available, this will be 0xFFFF. */

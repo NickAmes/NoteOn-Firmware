@@ -40,7 +40,7 @@ int init_battery(void){
 	if(I2C_DONE == flag){
 		if(0x14 == id){
 			/* The ID register contains the correct value. */
-			HousekeepingTasks[0] = &update_battery_voltage;
+			HousekeepingTasks[BATTERY_HK_SLOT] = &update_battery_voltage;
 			return 0;
 		} else {
 			return -1;
@@ -57,7 +57,7 @@ int init_battery(void){
 void shutdown_battery(void){
 	/* The IC goes into sleep mode automatically, so the only thing to do
 	 * is stop the update_battery_voltage() task. */
-	HousekeepingTasks[0] = 0;
+	HousekeepingTasks[BATTERY_HK_SLOT] = 0;
 }
 
 /* Battery voltage update task. This is called automatically by the housekeeping
@@ -67,26 +67,27 @@ void update_battery_voltage(void){
 	 * a battery isn't present, and can't make multiple measurements of
 	 * the battery voltage.
 	 * However, the IC still measures the battery voltage on power-up, which
-	 * provides a work-around. Every measurement cycle, the IC is soft-reset.
+	 * provides a work-around. Every other measurement cycle, the IC is soft-reset.
 	 * It then spends 250ms taking a battery voltage measurement, and shuts
 	 * down. */
 	static uint8_t state; /* 0 = Reset the IC, 1 = fetch the value. */
-	/* high voltage byte and low voltage byte ticket flags. */
-	static uint8_t volt_H_flag, volt_L_flag;
-	/* reset command byte, high and low voltage bytes. */
-	static uint8_t reset_cmd, volt_H, volt_L; 
+	/* High voltage byte and low voltage byte ticket flags. */
+	static volatile uint8_t volt_H_flag, volt_L_flag;
+	/* Reset command byte. */
+	static const uint8_t reset_cmd = 0x10; /* Soft reset command. */
+	/* High and low voltage bytes. */
+	static volatile volt_H, volt_L;
 	i2c_ticket_t ticket; /* I2C ticket. */
 	ticket.addr = 0x70;
 	ticket.at_time = 0;
 	ticket.size = 1;
-	reset_cmd = 0x10; /* Soft reset command. */
 
 	if(0 == state){
 		/* Tell the IC to perform a soft-reset and process the data from
 		 * the previous measurement. */
 		state = 1;
 		ticket.rw = I2C_WRITE;
-		ticket.reg = 1;
+		ticket.reg = 1; 
 		ticket.data = &reset_cmd;
 		ticket.done_flag = 0;
 		add_ticket_i2c(&ticket);

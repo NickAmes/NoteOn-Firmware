@@ -81,33 +81,11 @@ int main(void){
 	status = init_system();
 	print_status_message(status);
 
-	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO11);
-	GPIOA_BSRR |= (GPIO11);
-	
-
-	uint8_t buf[256];
-	//write_str("Programming randblock into page 131071...\r\n");
-	//program_page_mem(131071, &randblock[0]);
-	//write_str("Programming randblock into page 131072...\r\n");
-	//program_page_mem(131072, &randblock[0]);
-	
-	//erase_die_mem(1);
-
-	while(1){
-		read_mem(33554304, &buf[0], 256);
-		if(!(memcmp(buf, randblock+128, 128) || memcmp(buf+128, randblock, 128))){
-			led_toggle();
-		} else {
-			break;
-		}
-		delay_ms(50);
-	}
-	shutdown_system();
-	
 	led_on();
-	while(1);
-
-	
+	while(1){
+		printf("IMU Temp: %f  Battery Voltage: %d\r\n", IMUTemperature, BatteryVoltage);
+		delay_ms(2000);
+	}
 // 	uint8_t data[6];
 // 	volatile uint8_t flag;
 // 	i2c_ticket_t ticket;
@@ -205,15 +183,17 @@ uint8_t init_system(void){
 	init_spi();
 	init_usb();
 
+	welcome_message();
+
 	/* Setup board peripheral drivers. */
 	init_led();
 	init_switches();
+	if(init_imu())status |= ERROR_IMU;
 	if(init_battery())status |= ERROR_BATTERY;
-	if(1)status |= ERROR_IMU;
 	if(1)status |= ERROR_AUXACCEL;
 	if(1)status |= ERROR_BLUETOOTH;
 	if(init_memory())status |= ERROR_MEMORY;
-	welcome_message();
+	
 	return status;
 }
 

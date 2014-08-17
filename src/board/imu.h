@@ -17,7 +17,7 @@
  * -Temperature:      1Hz (approximate)
  * Data is fetched from the accelerometer, gyroscope, and magnetometer at
  * a 100Hz rate. The number of data points in each fetch may vary by a small
- * amount. Temperature is fetched using a housekeeping task in slot 1.
+ * amount. Temperature is fetched using a housekeeping task.
  * 
  * Both the accelerometer and gyroscope have built in FIFOs which buffer their
  * output between reads, ensuring that no data is lost. Each data point from
@@ -30,7 +30,9 @@
  * get_buf_imu() will return a pointer to the buffer. The data should be copied
  * out of the buffer as quickly as possible. Once data has been copied,
  * release_buf_imu() must be called. Data must be copied out of the buffer within
- * 10ms, or an overrun will occur, and OverrunIMU will be set to true. */
+ * 10ms, or an overrun will occur, and OverrunIMU will be set to true.
+ * TODO: Data range.
+ */
 
 /* If true, data loss occurred because a data fetch started while the last
  * buffer was in use. This should be set back to false after the main task
@@ -41,13 +43,18 @@ extern bool OverrunIMU;
  * TODO: Develop mitigation strategies (such as retrying the transfer). */
 extern bool BusErrorIMU;
 
-#define IMU_MAX_FIFO_DEPTH 32 /* The maximum number of data points in a fetch. */
+/* Current Temperature of IMU, in degrees Celsius. If data is unavailable,
+ * it will be set to NaN. */
+extern float IMUTemperature;
+
+#define IMU_TEMP_HK_SLOT 1 /* IMU temperature sensing housekeeping task slot. */
+
+#define IMU_MAX_ACCEL 20 /* The maximum number of acceleration data points in a fetch. */
+#define IMU_MAX_GYRO  10 /* The maximum number of angular rate data points in a fetch. */
 
 /* 3-dimensional 16-bit vector. Used to store data points from the accelerometer,
  * gyroscope, and magnetometer. */
-/* TODO: Modify this as necessary to allow a direct write from the I2C DMA to
- * the data array. */
-typedef struct vec3_t {
+typedef struct __attribute__ ((__packed__)) vec3_t {
 	int16_t x, y, z;
 } vec3_t;
 
@@ -57,14 +64,16 @@ typedef struct imu_data_t {
 	 * occurred earlier in time. (i.e. Data point n
 	 * occurred before point n+1). */
 	uint8_t num_accel; /* Number of acceleration data points. */
-	vec3_t accel[IMU_MAX_FIFO_DEPTH]; /* Acceleration data. */
+	vec3_t accel[IMU_MAX_ACCEL]; /* Acceleration data. */
 
 	uint8_t num_gyro; /* Number of angular rate data points. */
-	vec3_t gyro[IMU_MAX_FIFO_DEPTH]; /* Angular rate data. */
+	vec3_t gyro[IMU_MAX_GYRO]; /* Angular rate data. */
 
 	vec3_t mag; /* Magnetometer reading at the time of the fetch. */
 	uint32_t mag_time; /* Value of SystemTime at completion of magnetometer
 	                    * reading. */
+	float temperature; /* Approximate temperature when data was collected,
+	                    * in degrees Celsius. */
 	/* TODO: Verify that temperature changes slowly enough to be adequately
 	 * processed by the housekeeping task. */
 } imu_data_t;
