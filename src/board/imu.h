@@ -43,9 +43,9 @@ extern bool OverrunIMU;
  * TODO: Develop mitigation strategies (such as retrying the transfer). */
 extern bool BusErrorIMU;
 
-/* Current Temperature of IMU, in degrees Celsius. If data is unavailable,
- * it will be set to NaN. */
-extern float IMUTemperature;
+/* Current Temperature of IMU. This is the raw value from the IMU.
+ * If no data is available, it will be set to 0xFFFF. */
+extern int16_t IMUTemperature;
 
 #define IMU_TEMP_HK_SLOT 1 /* IMU temperature sensing housekeeping task slot. */
 
@@ -72,8 +72,8 @@ typedef struct imu_data_t {
 	vec3_t mag; /* Magnetometer reading at the time of the fetch. */
 	uint32_t mag_time; /* Value of SystemTime at completion of magnetometer
 	                    * reading. */
-	float temperature; /* Approximate temperature when data was collected,
-	                    * in degrees Celsius. */
+	int16_t temperature; /* Approximate temperature when data was collected.
+	                      * This is the raw value from the IMU. */
 	/* TODO: Verify that temperature changes slowly enough to be adequately
 	 * processed by the housekeeping task. */
 } imu_data_t;

@@ -83,7 +83,7 @@ int main(void){
 
 	led_on();
 	while(1){
-		printf("IMU Temp: %f  Battery Voltage: %d\r\n", IMUTemperature, BatteryVoltage);
+		printf("IMU Temp: %d  Battery Voltage: %d\r\n", IMUTemperature, BatteryVoltage);
 		delay_ms(2000);
 	}
 // 	uint8_t data[6];

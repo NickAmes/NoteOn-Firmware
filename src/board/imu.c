@@ -14,8 +14,9 @@
 //TODO
 #include <stdio.h>
 
-/* Current Temperature of IMU, in degrees Celsius. */
-float IMUTemperature;
+/* Current Temperature of IMU. This is the raw value from the IMU.
+ * If no data is available, it will be set to 0xFFFF. */
+int16_t IMUTemperature;
 
 /* Current Temperature of IMU, in degrees Celsius. If data is unavailable,
  * it will be set to NaN. */
@@ -24,11 +25,9 @@ static void update_imu_temp(void){
 	i2c_ticket_t ticket;
 	
 	if(I2C_DONE == done_l && I2C_DONE == done_h){
-		/* TODO: Convert temperature data. */
-		IMUTemperature = tempdata[0];
-		iprintf("tempdata[1] = 0x%X tempdata[0] = 0x%X\r\n", tempdata[1], tempdata[0]);
+		IMUTemperature = (int16_t)tempdata[0];
 	} else {
-		IMUTemperature = NAN;
+		IMUTemperature = 0xFFFF;
 	}
 
 	/* Temperature high byte must be read first. */
