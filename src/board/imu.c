@@ -33,7 +33,8 @@ static void update_imu_temp(void){
 
 	ticket.rw = I2C_READ;
 	ticket.addr = 0x1D; /* LSM9DS0TR accelerometer I2C address with SDO_XM high. */
-	ticket.reg = 0x05; /* OUT_TEMP_L_XM with auto-increment set. */
+// 	ticket.reg = 0x85; /* OUT_TEMP_L_XM with auto-increment set. */
+	ticket.reg = 0x20; /* OUT_TEMP_L_XM with auto-increment set. */
 	ticket.data = &tempdata[0];
 	ticket.size = 2;
 	ticket.done_flag = &done;
@@ -167,7 +168,7 @@ int init_imu(void){
 
 	/* Enable Magnetometer and Temperature sensor. */
 	accel_t.rw = I2C_WRITE;
-	accel_t.reg = 0x20; /* CTRL_REG5_XM */
+	accel_t.reg = 0x24; /* CTRL_REG5_XM */
 	a_data = 0xF4; /* Enable temp. sensor, magnetometer high resolution mode,
 	                * magnetometer ODR = 100Hz. */
 	a_done = 0;
