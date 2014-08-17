@@ -10,5 +10,6 @@
 #include "switches.h"
 #include "battery.h"
 #include "memory.h"
+#include "imu.h"
 
 #endif 

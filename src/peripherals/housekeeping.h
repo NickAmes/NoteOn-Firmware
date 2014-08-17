@@ -24,7 +24,8 @@
 
 /* Housekeeping task slots.
  * Allocations:
- *   -Slot 0: battery.h
+ *   -Slot 0: battery.h (battery voltage)
+ *   -Slot 1: imu.h (IMU temperature)
  */
 extern void (*volatile HousekeepingTasks[NUM_HOUSEKEEPING_TASKS])(void);
 

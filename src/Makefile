@@ -2,7 +2,7 @@ OUTFILE:=../build/smartpen
 OUTDIR:=../build/
 OBJFILES:= peripherals/usart.o peripherals/newlib_stubs.o peripherals/clock.o  peripherals/systick.o peripherals/i2c.o 
 OBJFILES+= peripherals/housekeeping.o peripherals/usb.o peripherals/spi.o board/switches.o board/led.o board/battery.o
-OBJFILES+= board/memory.o
+OBJFILES+= board/memory.o board/imu.o
 
 all: main.c $(OBJFILES)
 	$(Q)mkdir -p ../build/ 
@@ -46,6 +46,9 @@ peripherals/spi.o: peripherals/spi.c peripherals/spi.h
 
 board/memory.o: board/memory.c board/memory.h
 	$(Q)$(CC) -c board/memory.c -o board/memory.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
+
+board/imu.o: board/imu.c board/imu.h
+	$(Q)$(CC) -c board/imu.c -o board/imu.o $(INCLUDE) $(ARCH_FLAGS) $(CPPFLAGS) $(CFLAGS)
 
 clean:
 	rm -f *.o peripherals/*.o board/*.o
