@@ -20,10 +20,10 @@ float IMUTemperature;
 /* Current Temperature of IMU, in degrees Celsius. If data is unavailable,
  * it will be set to NaN. */
 static void update_imu_temp(void){
-	static volatile uint8_t done, tempdata[2];
+	static volatile uint8_t done_h, done_l, tempdata[2];
 	i2c_ticket_t ticket;
 	
-	if(I2C_DONE == done){
+	if(I2C_DONE == done_l && I2C_DONE == done_h){
 		/* TODO: Convert temperature data. */
 		IMUTemperature = tempdata[0];
 		iprintf("tempdata[1] = 0x%X tempdata[0] = 0x%X\r\n", tempdata[1], tempdata[0]);
@@ -31,16 +31,21 @@ static void update_imu_temp(void){
 		IMUTemperature = NAN;
 	}
 
+	/* Temperature high byte must be read first. */
 	ticket.rw = I2C_READ;
 	ticket.addr = 0x1D; /* LSM9DS0TR accelerometer I2C address with SDO_XM high. */
-// 	ticket.reg = 0x85; /* OUT_TEMP_L_XM with auto-increment set. */
-	ticket.reg = 0x20; /* OUT_TEMP_L_XM with auto-increment set. */
-	ticket.data = &tempdata[0];
-	ticket.size = 2;
-	ticket.done_flag = &done;
+ 	ticket.reg = 0x06; /* OUT_TEMP_H_XM. */
+	ticket.data = &tempdata[1];
+	ticket.size = 1;
+	ticket.done_flag = &done_h;
 	ticket.at_time = 0;
-	
-	done = 0;
+	done_h = 0;
+	add_ticket_i2c(&ticket);
+
+	ticket.reg = 0x05; /* OUT_TEMP_L_XM. */
+	ticket.data = &tempdata[0];
+	ticket.done_flag = &done_l;
+	done_l = 0;
 	add_ticket_i2c(&ticket);
 }
 
@@ -126,6 +131,7 @@ int init_imu(void){
 		/* Bus error. */
 		return -1;
 	}
+	delay_ms(10); /* Give the device time to reset itself. */
 
 	/* Enable FIFO */
 	accel_t.rw = I2C_WRITE;
