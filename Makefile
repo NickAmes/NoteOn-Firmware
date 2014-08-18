@@ -4,7 +4,7 @@
 CFLAGS=-O2 -g -Wextra -Wshadow -Wimplicit-function-declaration
 CFLAGS+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes -std=gnu99
 CFLAGS+= -fno-common -ffunction-sections -fdata-sections -specs=nano.specs
-#CFLAGS+=-u _printf_float
+CFLAGS+=-u _printf_float
 
 # C Pre-Processor Flags:
 CPPFLAGS= -Wall -Wundef

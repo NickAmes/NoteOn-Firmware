@@ -5,14 +5,12 @@
  * Contains code from the libopencm3 project.                                 */
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/i2c.h>
 #include "peripherals/peripherals.h"
 #include "board/board.h"
-
-//TODO
-#include <libopencm3/stm32/timer.h>
 
 /* Setup all peripherals.
  * The return value indicates the status of the board peripherals. The value
@@ -42,6 +40,78 @@ int main(void){
 	print_status_message(status);
 
 	led_on();
+
+// 	/* Erase Data. */
+// 	erase_sector_mem(0);
+
+// 	/* Record data to external flash. */
+// 	uint8_t buf[256];
+// 	uint32_t page = 0;
+// 	imu_data_t *data;
+// 	start_imu();
+// 	while(1){
+// 		while(NULL == (data = get_buf_imu()));
+// 		memcpy(buf, data, sizeof(imu_data_t));
+// 		release_buf_imu();
+// 		/* Record error indicators. */
+// 		buf[sizeof(imu_data_t) + 0] = BufferOverrunIMU;
+// 		buf[sizeof(imu_data_t) + 1] = FIFOOverrunIMU;
+// 		buf[sizeof(imu_data_t) + 2] = BusErrorIMU;
+// 		buf[sizeof(imu_data_t) + 3] = BusTimeoutIMU;
+// 		/* Last byte of page is set to 0 to indicate that the page
+// 		 * is filled. */
+// 		buf[255] = 0;
+// 		program_page_mem(page, buf);
+// 		page++;
+// 		if((page % 30) == 0)led_toggle();
+// 	}
+
+
+	/* Read out data over USART. */
+	uint8_t buf[256];
+	imu_data_t *data = (imu_data_t *)buf;
+	uint32_t page = 0;
+	uint32_t a_sample = 0;
+	uint32_t g_sample = 0;
+	int i;
+	/* Output formats:
+	 *   Type Code (A, G, or M), Time (s), X, Y, Z, Temperature, Tip Switch State, Memory Page
+	 *  #BufferOverrunIMU=* FIFOOverrunIMU=* BusErrorIMU=* BusTimeoutIMU=*
+	 */
+	while(1){
+		read_mem(page << 8, buf, 256);
+		if(0 != buf[255]){
+			break;
+		}
+		/* Error Statuses */
+		printf("#BufferOverrunIMU=%d FIFOOverrunIMU=%d BusErrorIMU=%d BusTimeoutIMU=%d\r\n",
+		       buf[sizeof(imu_data_t) + 0], buf[sizeof(imu_data_t) + 1],
+		       buf[sizeof(imu_data_t) + 2], buf[sizeof(imu_data_t) + 3]);
+		delay_ms(1);
+		/* Magnetometer Data */
+		printf("M, %f, %d, %d, %d, %d, %d, %d\r\n",
+		       page * 0.01, data->mag.x, data->mag.y, data->mag.z,
+		       data->temperature, data->tip_pressed, page);
+		delay_ms(1);
+		/* Accelerometer Data */
+		for(i=0; i < data->num_accel; i++, a_sample++){
+			printf("A, %f, %d, %d, %d, %d, %d, %d\r\n",
+			       a_sample * 0.000625, data->accel[i].x, data->accel[i].y, data->accel[i].z,
+		               data->temperature, data->tip_pressed, page);
+			delay_ms(1);
+		}
+		/* Gyroscope Data */
+		for(i=0; i < data->num_gyro; i++, g_sample++){
+			printf("G, %f, %d, %d, %d, %d, %d, %d\r\n",
+			       (float) g_sample / 760, data->gyro[i].x, data->gyro[i].y, data->gyro[i].z,
+			       data->temperature, data->tip_pressed, page);
+			delay_ms(1);
+		}
+		page++;
+	}
+	printf("#Done at page %d.\r\n", page);
+	fflush(stdout);
+
 	while(1);
 		
 }

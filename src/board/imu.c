@@ -16,10 +16,6 @@
 #include <libopencm3/stm32/timer.h>
 #include <math.h>
 
-//TODO
-#include <stdio.h>
-#include "led.h"
-
 /* I2C address of LSM9DS0TR accelerometer with SDO_XM high. */
 #define IMU_ACCEL_ADDR 0x1D
 /* I2C address of LSM9DS0TR gyroscope with SDO_G high. */
@@ -227,6 +223,8 @@ void tim1_up_tim16_isr(void){
 	TaskComplete = false;
 	Done = I2C_BUSY;
 	fetch_imu_accel_num();
+
+	
 }
 
 /* Setup TIM1 and start the data streaming task. */
@@ -404,7 +402,7 @@ int init_imu(void){
 
 /* Synchronize the IMU and start the data streaming and temperature update
  * tasks. */
-void start_task_imu(void){
+void start_imu(void){
 	i2c_ticket_t a_ticket, g_ticket;
 	volatile uint8_t a_done, g_done;
 	volatile uint8_t a_data, g_data;
@@ -438,6 +436,11 @@ void start_task_imu(void){
 	add_ticket_i2c(&g_ticket);
 	while(I2C_BUSY == a_done || I2C_BUSY == g_done){
 		/* Wait for tickets to be processed. */
+	}
+	if(I2C_DONE != a_done || I2C_DONE != g_done){
+		/* Bus error. */
+		BusErrorIMU = true;
+		return;
 	}
 	
 	start_stream_task();

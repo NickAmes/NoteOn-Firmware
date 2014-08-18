@@ -32,6 +32,8 @@
  * release_buf_imu() must be called. Data must be copied out of the buffer within
  * 10ms, or an overrun will occur.
  * TODO: Data range.
+ * TODO: Clarify comments. "Frame" might be a good word for describing each
+ * chunk of data.
  */
 
 /* If true, data loss occurred because a data fetch started while the last
@@ -109,7 +111,7 @@ int init_imu(void);
 
 /* Synchronize the IMU and start the data streaming and temperature update
  * tasks. */
-void start_task_imu(void);
+void start_imu(void);
 
 /* Shutdown the IMU data streaming task and put the IMU in a low-power state. */
 void shutdown_imu(void);
