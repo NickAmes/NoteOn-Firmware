@@ -36,7 +36,7 @@
 
 /* If true, data loss occurred because a data fetch started while the last
  * buffer was in use. */
-extern bool TaskOverrunIMU;
+extern bool BufferOverrunIMU;
 
 /* If true, data loss occurred due to an overrun in an IMU internal FIFO. */
 extern bool FIFOOverrunIMU;

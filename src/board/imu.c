@@ -62,7 +62,7 @@ static void update_imu_temp(void){
 
 /* If true, data loss occurred because a data fetch started while the last
  * buffer was in use. */
-bool OverrunIMU;
+bool BufferOverrunIMU;
 
 /* If true, data loss occurred due to an overrun in an IMU internal FIFO. */
 bool FIFOOverrunIMU;
@@ -83,15 +83,13 @@ bool BusTimeoutIMU;
  *   -Fetch magnetometer reading
  */
 
-/* TODO: In each task, set
- *   -addr
- *   -reg
- *   -data
- *   -size
- *   -done_callbacks */
-
 /* IMU Data Buffers */
+static volatile imu_data_t Buffer[2];
+static volatile enum {BUF_STALE, BUF_FRESH, BUF_FRESHEST, BUF_READING, BUF_WRITING}
+                      BufferState[2] = {BUF_STALE, BUF_STALE}; /* State of data buffers. */
 static volatile imu_data_t *CurrentBuf; /* The buffer currently being filled with data. */
+static volatile uint8_t CurrentBufIndex; /* The index of the buffer currently
+                                          * being filled with data. */
 
 /* These variables are used by all the streaming task functions. */
 static volatile i2c_ticket_t Ticket;
@@ -181,28 +179,57 @@ static void fetch_finish(void){
 	/* Store current IMU temperature. */
 	CurrentBuf->temperature = IMUTemperature;
 
-	/* TODO: Buffer wrap up. */
+	if(BUF_FRESH == BufferState[0] || BUF_FRESH == BufferState[1]){
+		BufferState[CurrentBufIndex] = BUF_FRESHEST;
+	} else {
+		BufferState[CurrentBufIndex] = BUF_FRESH;
+	}
 	TaskComplete = true;
 }
 
 /* Data streaming task interrupt. Called every 10ms by TIM1. */
 void tim1_up_tim16_isr(void){
 	TIM1_SR = 0; /* Clear the interrupt flag so the ISR will exit. */
-	/* TODO: Check if a task in ongoing. */
-	/* TODO: Setup buffer. */
+	
+	if(false == TaskComplete){
+		if(I2C_DONE == Done){
+			/* Previous fetch has not completed, but a bus
+			 * error has not occurred. */
+			BusTimeoutIMU = true;
+			return;
+		} else {
+			/* Previous fetch has not completed due to a bus error. */
+			BusErrorIMU = true;
+		}
+	}
+	
+	if(BUF_STALE == BufferState[0]){
+		BufferState[0] = BUF_WRITING;
+		CurrentBuf = &Buffer[0];
+		CurrentBufIndex = 0;
+	} else if(BUF_STALE == BufferState[1]){
+		BufferState[1] = BUF_WRITING;
+		CurrentBuf = &Buffer[1];
+		CurrentBufIndex = 1;
+	} else {
+		/* No buffer available. */
+		BufferOverrunIMU = true;
+		TaskComplete = true;
+		return;
+	}
 
-// 	Ticket.rw = I2C_READ;
-// 	Ticket.at_time = NULL;
-// 	Ticket.done_flag = &Done;
-// 
-// 	TaskComplete = false;
-// 	Done = I2C_BUSY;
-// 	fetch_imu_accel_num();
-	led_toggle();
+	Ticket.rw = I2C_READ;
+	Ticket.at_time = NULL;
+	Ticket.done_flag = &Done;
+
+	TaskComplete = false;
+	Done = I2C_BUSY;
+	fetch_imu_accel_num();
 }
 
 /* Setup TIM1 and start the data streaming task. */
 static void start_stream_task(void){
+	TaskComplete = true; /* Prevent confusion during the first run. */
 	rcc_periph_clock_enable(RCC_TIM1);
 	TIM1_CR1 = TIM_CR1_URS; /* Only overflow generates an interrupt. */
 	TIM1_DIER = TIM_DIER_UIE; /* Enable update event interrupt generation. */
@@ -212,21 +239,41 @@ static void start_stream_task(void){
 	TIM1_CR1 |= TIM_CR1_CEN; /* Start timer. */
 	nvic_set_priority(NVIC_TIM1_UP_TIM16_IRQ, IMU_IRQ_PRIORITY << 4);
 	nvic_enable_irq(NVIC_TIM1_UP_TIM16_IRQ);
-
-	TaskComplete = true; /* Prevent confusion during the first run. */
 }
 
 /* Returns a pointer to an IMU data structure if fresh data is available.
  * Otherwise, NULL is returned. Copy data out of the buffer as quickly as
  * possible and call release_buf_imu() when done! */
 imu_data_t *get_buf_imu(void){
-	return 0;
+	if(BUF_FRESHEST == BufferState[0]){
+		BufferState[0] = BUF_READING;
+		return (imu_data_t *) &Buffer[0];
+	} else
+	if(BUF_FRESHEST == BufferState[1]){
+		BufferState[1] = BUF_READING;
+		return (imu_data_t *) &Buffer[1];
+	} else
+	if(BUF_FRESH == BufferState[0]){
+		BufferState[0] = BUF_READING;
+		return (imu_data_t *) &Buffer[0];
+	} else
+	if(BUF_FRESH == BufferState[1]){
+		BufferState[1] = BUF_READING;
+		return (imu_data_t *) &Buffer[1];
+	} else {
+		return NULL;
+	}
 }
 
 /* Tell the IMU stream task that data has been copied out of the buffer
  * provided by get_buf_imu(). */
 void release_buf_imu(void){
-
+	if(BUF_READING == BufferState[0]){
+		BufferState[0] = BUF_STALE;
+	}
+	if(BUF_READING == BufferState[1]){
+		BufferState[1] = BUF_STALE;
+	}
 }
 
 /* Initialize the IMU and start the data streaming task.
