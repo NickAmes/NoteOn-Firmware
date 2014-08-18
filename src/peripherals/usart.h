@@ -15,7 +15,7 @@
 
 /* Baud rate. Data is transfered at the baud rate with 8 data bit, no parity,
  * and 1 stop bit. */
-#define USART_BAUD 115200
+#define USART_BAUD 230400
 
 /* Initialize USART1. This function sets the baud rate based on the current clock
  * frequency. If the clock is changed this function must be called again. */
