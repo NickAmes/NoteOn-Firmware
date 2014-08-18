@@ -192,9 +192,11 @@ void tim1_up_tim16_isr(void){
 	TIM1_SR = 0; /* Clear the interrupt flag so the ISR will exit. */
 	
 	if(false == TaskComplete){
+		/* Previous fetch not complete. */
 		if(I2C_DONE == Done){
 			/* Previous fetch has not completed, but a bus
-			 * error has not occurred. */
+			 * error has not occurred. It's probably still in
+			 * progress. */
 			BusTimeoutIMU = true;
 			return;
 		} else {
@@ -276,10 +278,9 @@ void release_buf_imu(void){
 	}
 }
 
-/* Initialize the IMU and start the data streaming task.
- * Returns 0 on success, -1 on error.
- * This should be called before initializing the battery gas gauge to reduce
- * traffic on the I2C bus during accelerometer-gyroscope synchronization. */
+/* Initialize the IMU. start_task_imu() must be called after this function
+ * to synchronize the IMU and start the data streaming task.
+ * Returns 0 on success, -1 on error. */
 int init_imu(void){
 	i2c_ticket_t a_ticket, g_ticket;
 	volatile uint8_t a_done, g_done;
@@ -394,6 +395,34 @@ int init_imu(void){
 		return -1;
 	}
 
+	
+
+	/* TODO: Try enabling BDU mode for the benefit of the magnetometer. */
+
+	return 0;
+}
+
+/* Synchronize the IMU and start the data streaming and temperature update
+ * tasks. */
+void start_task_imu(void){
+	i2c_ticket_t a_ticket, g_ticket;
+	volatile uint8_t a_done, g_done;
+	volatile uint8_t a_data, g_data;
+	
+	a_ticket.addr = IMU_ACCEL_ADDR; /* LSM9DS0TR accelerometer I2C address with SDO_XM high. */
+	a_ticket.done_flag = &a_done;
+	a_ticket.at_time = 0;
+	a_ticket.done_callback = 0;
+	a_ticket.data = &a_data;
+	a_ticket.size = 1;
+	
+	g_ticket.addr = IMU_GYRO_ADDR; /* LSM9DS0TR gyroscope I2C address with SDO_G high. */
+	g_ticket.done_flag = &g_done;
+	g_ticket.at_time = 0;
+	g_ticket.done_callback = 0;
+	g_ticket.data = &g_data;
+	g_ticket.size = 1;
+
 	/* Set ODR and bring IMU out of sleep mode.
 	 * This is the critical step that synchronizes the outputs of the
 	 * accelerometer and gyroscope. */
@@ -410,28 +439,20 @@ int init_imu(void){
 	while(I2C_BUSY == a_done || I2C_BUSY == g_done){
 		/* Wait for tickets to be processed. */
 	}
-	if(I2C_DONE != a_done || I2C_DONE != g_done){
-		/* Bus error. */
-		return -1;
-	}
-
+	
 	start_stream_task();
 	
 	/* Start temperature update task. */
 	HousekeepingTasks[IMU_TEMP_HK_SLOT] = &update_imu_temp;
-
-	/* TODO: Try enabling BDU mode for the benefit of the magnetometer. */
-
-	return 0;
 }
-	
 
 /* Shutdown the IMU data streaming task and put the IMU in a low-power state. */
 void shutdown_imu(void){
 	/* Disable temperature sensing housekeeping task. */
 	HousekeepingTasks[IMU_TEMP_HK_SLOT] = 0;
 
-	/* TODO: Stop stream task and wait for it to stop. */
+	/* Stop data stream task. */
+	nvic_disable_irq(NVIC_TIM1_UP_TIM16_IRQ);
 
 	/* TODO: Put the IMU in a low-power state. */
 }
