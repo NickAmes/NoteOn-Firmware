@@ -62,6 +62,7 @@ extern int16_t IMUTemperature;
 /* IMU temperature sensing housekeeping task slot. */
 #define IMU_TEMP_HK_SLOT 1
 
+/* TODO: Add a check to make sure these aren't exceeded. */
 /* The maximum number of acceleration data points in a fetch. */
 #define IMU_MAX_ACCEL_POINTS 20
 /* The maximum number of angular rate data points in a fetch. */

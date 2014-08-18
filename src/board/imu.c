@@ -121,7 +121,9 @@ static void fetch_imu_accel_data(void){
 	CurrentBuf->num_accel &= 0x1F;
 
 	Ticket.addr = IMU_ACCEL_ADDR;
-	Ticket.reg = 0xA8; /* OUT_X_L_A with auto-increment bit set */
+	//TODO
+	//Ticket.reg = 0xA8; /* OUT_X_L_A with auto-increment bit set */
+	Ticket.reg = 0x28; /* OUT_X_L_A */
 	Ticket.data = &CurrentBuf->accel;
 	Ticket.size = CurrentBuf->num_accel * sizeof(vec3_t);
 	Ticket.done_callback = &fetch_imu_gyro_num;
@@ -339,6 +341,25 @@ int init_imu(void){
 	}
 	delay_ms(10); /* Give the device time to reset itself. */
 
+	/* Setup FIFO modes. */
+	a_ticket.rw = I2C_WRITE;
+	a_ticket.reg = 0x2E; /* FIFO_CTRL_REG */
+	a_data = 0x5F; /* FIFO stream mode and watermark level=31 */
+	g_ticket.rw = I2C_WRITE;
+	g_ticket.reg = 0x2E; /* FIFO_CTRL_REG_G */
+	g_data = 0x5F; /* FIFO stream mode and watermark level=31 */
+	a_done = 0;
+	g_done = 0;
+	add_ticket_i2c(&a_ticket);
+	add_ticket_i2c(&g_ticket);
+	while(I2C_BUSY == a_done || I2C_BUSY == g_done){
+		/* Wait for tickets to be processed. */
+	}
+	if(I2C_DONE != a_done || I2C_DONE != g_done){
+		/* Bus error. */
+		return -1;
+	}
+	
 	/* Enable FIFO */
 	a_ticket.rw = I2C_WRITE;
 	a_ticket.reg = 0x1F; /* CTRL_REG0_XM */
@@ -359,24 +380,7 @@ int init_imu(void){
 		return -1;
 	}
 
-	/* Setup FIFO modes. */
-	a_ticket.rw = I2C_WRITE;
-	a_ticket.reg = 0x2E; /* FIFO_CTRL_REG */
-	a_data = 0x5F; /* FIFO stream mode and watermark level=31 */
-	g_ticket.rw = I2C_WRITE;
-	g_ticket.reg = 0x2E; /* FIFO_CTRL_REG_G */
-	g_data = 0x5F; /* FIFO stream mode and watermark level=31 */
-	a_done = 0;
-	g_done = 0;
-	add_ticket_i2c(&a_ticket);
-	add_ticket_i2c(&g_ticket);
-	while(I2C_BUSY == a_done || I2C_BUSY == g_done){
-		/* Wait for tickets to be processed. */
-	}
-	if(I2C_DONE != a_done || I2C_DONE != g_done){
-		/* Bus error. */
-		return -1;
-	}
+	
 
 	/* Enable Magnetometer and Temperature sensor. */
 	a_ticket.rw = I2C_WRITE;

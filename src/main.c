@@ -41,7 +41,7 @@ int main(void){
 
 	led_on();
 
-	enum {ERASE, RECORD, PLAYBACK} mode = ERASE;
+	enum {ERASE, RECORD, PLAYBACK} mode = PLAYBACK;
 
 	if(ERASE == mode){
 		/* Erase Data. */
