@@ -16,7 +16,8 @@
 /* Housekeeping task period, in milliseconds (ms). */
 #define HOUSEKEEPING_PERIOD_MS 500
 
-/* Housekeeping task priority. This should be a large value (low urgency). */
+/* Housekeeping task priority. This is the true numeric value, not the
+ * hardware-specific shifted one. This should be a large value (low urgency). */
 #define HOUSEKEEPING_IRQ_PRIORITY 15
 
 /* Number of housekeeping tasks. */

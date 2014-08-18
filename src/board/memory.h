@@ -69,4 +69,8 @@ void erase_subsector_mem(uint32_t subsector);
  * stall until erasing is finished. */
 void erase_die_mem(uint8_t die);
 
+/* Returns the estimated number of milliseconds remaining until an erase
+ * or programming operation is complete. */
+uint32_t time_remaining_mem(void);
+
 #endif

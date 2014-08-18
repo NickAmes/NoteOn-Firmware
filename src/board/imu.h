@@ -1,6 +1,6 @@
 /* LSM9DS0TR 9-axis IMU driver.
  * This file provides a high-level interface to the IMU, including a timer-based
- * task that automatically streams data from the sensor.
+ * (TIM1) task that automatically streams data from the sensor.
  *
  * This file is a part of the firmware for the NoteOn Smartpen.
  * Copyright 2014 Nick Ames <nick@fetchmodus.org>. Licensed under the GNU GPLv3.
@@ -17,7 +17,7 @@
  * -Temperature:      1Hz (approximate)
  * Data is fetched from the accelerometer, gyroscope, and magnetometer at
  * a 100Hz rate. The number of data points in each fetch may vary by a small
- * amount. Temperature is fetched using a housekeeping task.
+ * amount. Temperature is read using a housekeeping task.
  * 
  * Both the accelerometer and gyroscope have built in FIFOs which buffer their
  * output between reads, ensuring that no data is lost. Each data point from
@@ -25,32 +25,45 @@
  * magnetometer does not have a FIFO, so its data points may not be precisely
  * spaced in time.
  *
- * Because the IMU task downloads data synchronously, two buffers are maintained
+ * Because the IMU task downloads data every 10ms, two buffers are maintained
  * to allow the main task to access fetched data. If fresh data is available,
  * get_buf_imu() will return a pointer to the buffer. The data should be copied
  * out of the buffer as quickly as possible. Once data has been copied,
  * release_buf_imu() must be called. Data must be copied out of the buffer within
- * 10ms, or an overrun will occur, and OverrunIMU will be set to true.
+ * 10ms, or an overrun will occur.
  * TODO: Data range.
  */
 
 /* If true, data loss occurred because a data fetch started while the last
- * buffer was in use. This should be set back to false after the main task
- * recognizes the error. */
-extern bool OverrunIMU;
+ * buffer was in use. */
+extern bool TaskOverrunIMU;
+
+/* If true, data loss occurred due to an overrun in an IMU internal FIFO. */
+extern bool FIFOOverrunIMU;
 
 /* If true, data loss occurred due to a bus error.
  * TODO: Develop mitigation strategies (such as retrying the transfer). */
 extern bool BusErrorIMU;
 
+/* If true, data loss occurred due to the data fetch not completing in time. */
+extern bool BusTimeoutIMU;
+
 /* Current Temperature of IMU. This is the raw value from the IMU.
  * If no data is available, it will be set to 0xFFFF. */
 extern int16_t IMUTemperature;
 
-#define IMU_TEMP_HK_SLOT 1 /* IMU temperature sensing housekeeping task slot. */
+/* Priority of data stream task interrupt. This is the true numeric value,
+ * not the hardware-specific shifted one. This must be higher in value
+ * (less urgent) than I2C_IRQ_PRIORITY. */
+#define IMU_IRQ_PRIORITY 5
 
-#define IMU_MAX_ACCEL 20 /* The maximum number of acceleration data points in a fetch. */
-#define IMU_MAX_GYRO  10 /* The maximum number of angular rate data points in a fetch. */
+/* IMU temperature sensing housekeeping task slot. */
+#define IMU_TEMP_HK_SLOT 1
+
+/* The maximum number of acceleration data points in a fetch. */
+#define IMU_MAX_ACCEL_POINTS 20
+/* The maximum number of angular rate data points in a fetch. */
+#define IMU_MAX_GYRO_POINTS  10
 
 /* 3-dimensional 16-bit vector. Used to store data points from the accelerometer,
  * gyroscope, and magnetometer. */
@@ -61,17 +74,19 @@ typedef struct __attribute__ ((__packed__)) vec3_t {
 /* IMU data structure. */
 typedef struct imu_data_t {
 	/* NOTE: Accelerometer and gyroscope data points with lower indices
-	 * occurred earlier in time. (i.e. Data point n
-	 * occurred before point n+1). */
+	 * occurred earlier in time.
+	 * (i.e. Data point n occurred before point n+1). */
 	uint8_t num_accel; /* Number of acceleration data points. */
-	vec3_t accel[IMU_MAX_ACCEL]; /* Acceleration data. */
+	vec3_t accel[IMU_MAX_ACCEL_POINTS]; /* Acceleration data. */
 
 	uint8_t num_gyro; /* Number of angular rate data points. */
-	vec3_t gyro[IMU_MAX_GYRO]; /* Angular rate data. */
+	vec3_t gyro[IMU_MAX_GYRO_POINTS]; /* Angular rate data. */
 
 	vec3_t mag; /* Magnetometer reading at the time of the fetch. */
 	uint32_t mag_time; /* Value of SystemTime at completion of magnetometer
 	                    * reading. */
+	bool tip_pressed; /* If true, the pen's tip switch was pressed.
+	                   * This value is sampled at mag_time. */
 	int16_t temperature; /* Approximate temperature when data was collected.
 	                      * This is the raw value from the IMU. */
 	/* TODO: Verify that temperature changes slowly enough to be adequately

@@ -191,8 +191,9 @@ void i2c1_ev_exti23_isr(){
 					*Conveyor[CurrentTicket].at_time = SystemTime;
 				}
 				if(NULL != Conveyor[CurrentTicket].done_flag){
-					*Conveyor[CurrentTicket].done_flag = 1;
+					*Conveyor[CurrentTicket].done_flag = I2C_DONE;
 				}
+				void (*done_callback)(void) = Conveyor[CurrentTicket].done_callback;
 				--NumTickets;
 				if(0 == NumTickets){
 					CurrentTicket = -1;
@@ -200,6 +201,7 @@ void i2c1_ev_exti23_isr(){
 					CurrentTicket = next_ticket(CurrentTicket);
 					start_conveyor();
 				}
+				if(NULL != done_callback)done_callback();
 			}
 		}
 	}

@@ -19,26 +19,28 @@ typedef struct i2c_ticket_t {
 	uint8_t rw; /* Transfer direction. 0=write, 1=read. */
 	uint8_t addr; /* 7-bit I2C device address. */
 	uint8_t reg; /* 8-bit register address. */
-	volatile uint8_t *data; /* Data to be transferred - this must not be NULL. */
+	volatile void *data; /* Data to be transferred - this must not be NULL. */
 	uint8_t size; /* Number of bytes to be transferred. */
 	volatile uint8_t *done_flag; /* The flag will be set to 1 when the transaction is
 	                              * complete, to 2 if an error occurs,
 				      * or to 3 if the conveyor is full. This field
 			              * may be NULL. */
+	void (*done_callback)(void); /* If not NULL, this function will be
+	                              * called if the transaction completes successfully. */
 	volatile uint32_t *at_time;  /* If not NULL, this will be set the the value of
 	                              * SystemTime at the moment the transfer was
 			              * completed. If an error occurs, this is not set. */
 } i2c_ticket_t;
 
 /* i2c_ticket_t->rw values */
-#define I2C_WRITE 0
-#define I2C_READ 1
+#define I2C_WRITE 0 /* Write data to slave register(s). */
+#define I2C_READ  1 /* Read data from slave register(s). */
 
 /* i2c_ticket_t->done_flag values */
-#define I2C_BUSY 0
-#define I2C_DONE 1
+#define I2C_BUSY  0
+#define I2C_DONE  1
 #define I2C_ERROR 2
-#define I2C_FULL 3
+#define I2C_FULL  3
 
 /* Number of tickets that the conveyor can hold. */
 #define I2C_CONVEYOR_SIZE 8

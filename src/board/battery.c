@@ -31,11 +31,11 @@ int init_battery(void){
 	ticket.data = &id;
 	ticket.done_flag = &flag;
 	ticket.at_time = 0;
+	ticket.done_callback = 0;
 	flag = 0;
 	add_ticket_i2c(&ticket);
 	while(I2C_BUSY == flag){
 		/* Wait for i2c transaction to complete. */
-		
 	}
 	if(I2C_DONE == flag){
 		if(0x14 == id){
@@ -74,12 +74,13 @@ void update_battery_voltage(void){
 	/* High voltage byte and low voltage byte ticket flags. */
 	static volatile uint8_t volt_H_flag, volt_L_flag;
 	/* Reset command byte. */
-	static const uint8_t reset_cmd = 0x10; /* Soft reset command. */
+	static uint8_t reset_cmd = 0x10; /* Soft reset command. */
 	/* High and low voltage bytes. */
-	static volatile volt_H, volt_L;
-	i2c_ticket_t ticket; /* I2C ticket. */
+	static volatile uint8_t volt_H, volt_L;
+	i2c_ticket_t ticket;
 	ticket.addr = 0x70;
 	ticket.at_time = 0;
+	ticket.done_callback = 0;
 	ticket.size = 1;
 
 	if(0 == state){

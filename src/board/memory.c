@@ -197,6 +197,21 @@ static void convert_addr(uint32_t little_address, uint8_t *big_bytes){
 	big_bytes[0] = (little_address >> 24) & 0x000000FF;
 }
 
+/* Contains the estimated value of SystemTime when the current erase or
+ * programming operation will complete. */
+static uint32_t CompletionTime;
+
+/* Returns the estimated number of milliseconds remaining until an erase
+ * or programming operation is complete. */
+uint32_t time_remaining_mem(void){
+	int64_t long_completiontime = CompletionTime;
+	if(long_completiontime - SystemTime < 0){
+		return 0;
+	} else {
+		return long_completiontime - SystemTime;
+	}
+}
+
 /* Read data from memory into the provided buffer. The address is in bytes,
  * and need not be aligned to any boundary. The size is in bytes, and need not
  * be a multiple of 2. */
@@ -246,6 +261,7 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size){
 	}
 	release_spi();
 	GotSPI = false;
+	CompletionTime = 0;
 }	
 
 /* Program a page (256 byte block).
@@ -274,6 +290,7 @@ void program_page_mem(uint32_t page, const uint8_t *data){
 
 	release_spi();
 	GotSPI = false;
+	CompletionTime = SystemTime + 5;
 }
 
 /* Erase the specified sector. Erasing sets all bits to 1.
@@ -299,6 +316,7 @@ void erase_sector_mem(uint16_t sector){
 
 	release_spi();
 	GotSPI = false;
+	CompletionTime = SystemTime + 3000;
 }
 
 /* Erase the specified subsectors. Erasing sets all bits to 1.
@@ -323,6 +341,7 @@ void erase_subsector_mem(uint32_t subsector){
 	
 	release_spi();
 	GotSPI = false;
+	CompletionTime = SystemTime + 800;
 }
 
 /* Erase one of the chip's two 32MB dies.
@@ -355,4 +374,5 @@ void erase_die_mem(uint8_t die){
 	
 	release_spi();
 	GotSPI = false;
+	CompletionTime = SystemTime + 480000;
 }

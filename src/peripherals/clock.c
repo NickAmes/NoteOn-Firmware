@@ -7,6 +7,10 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/flash.h>
 
+/* WARNING: Some timer setup routines were written with the assumption
+ * that the ABP1/ABP2 division factors are either 1 or 2. Don't choose different
+ * factors without checking all timer setup routines. */
+
 /* Default system clock is 8Mhz. */
 volatile uint32_t SystemClock = 8000000;
 
