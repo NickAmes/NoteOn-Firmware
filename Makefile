@@ -60,8 +60,6 @@ $(LIBOPENCM3).a:
 		printf "\t$$ git submodule init\n"; \
 		printf "\t$$ git submodule update\n"; \
 		printf "\tbefore running make.\n"; \
-		printf "\tNote that spaces in the current directory\n"; \
-		printf "\tpath will prevent libopencm3 from building.\n"; \
 		printf "######## ERROR ########\n"; \
 		exit 1; \
 		fi
