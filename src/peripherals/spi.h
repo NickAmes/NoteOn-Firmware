@@ -10,14 +10,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* The communication protocol required by the nRF8001 is moderately complex,
+/* The communication protocol required by the SPI devices is moderately complex,
  * and cannot be handled entirely by the SPI driver. As a result, the SPI driver
  * only arbitrates access to the SPI peripheral between the nRF8001 and external
  * flash drivers. It also provides some high-level functions for doing data
  * transfers. */
-
-/* A note on callbacks: any callback given to an SPI function should be treated
- * as an interrupt. No waiting, no polling, no blocking. */
 
 /* If true, the peripheral is currently in use by a driver. This variable
  * is READ-ONLY. */

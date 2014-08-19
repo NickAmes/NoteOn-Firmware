@@ -1,9 +1,23 @@
 NoteON Smartpen Firmware README
 ===============================
+Current Status
+--------------
+
+Required Software
+-----------------
 
 Source File Layout
 ------------------
 The src/ directory contains the firmware source files. src/peripherals/ contains
-modules providing high-level interfaces to on-chip peripherals, such as the
-I2C and SPI systems. src/board/ contains modules providing high-level
-interfaces to other ICs on the PCB, such as the IMU and bluetooth controller.
+modules providing high-level interfaces to on-chip peripherals, such as
+I2C and SPI. src/board/ contains modules providing high-level interfaces to 
+other ICs on the PCB, such as the IMU and bluetooth controller.
+
+The ld/ directory contains a linker script for the STM32F302x8.
+
+The libopencm3/ directory contains libopencm3 as a git submodule.
+
+The build/ directory contains the compiled binary.
+
+Architecture
+------------

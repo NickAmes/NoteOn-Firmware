@@ -1,4 +1,4 @@
-/* High-clock system control functions.
+/* System clock setup functions.
  * 
  * This file is a part of the firmware for the NoteOn Smartpen.
  * Copyright 2014 Nick Ames <nick@fetchmodus.org>. Licensed under the GNU GPLv3.

@@ -41,6 +41,9 @@ int main(void){
 
 	led_on();
 
+	/* IMU data streaming test code.
+	 * The data rate is too fast for the USART, so the data is recorded to
+	 * the external flash memory and read out later. */
 	enum {ERASE, RECORD, PLAYBACK} mode = PLAYBACK;
 
 	if(ERASE == mode){
@@ -57,6 +60,8 @@ int main(void){
 		uint8_t buf[256];
 		uint32_t page = 0;
 		imu_data_t *data;
+		printf("Recording...\r\n");
+		fflush(stdout);
 		start_imu();
 		while(1){
 			while(NULL == (data = get_buf_imu()));
@@ -93,26 +98,26 @@ int main(void){
 			}
 			/* Error Statuses */
 			printf("#BufferOverrunIMU=%d FIFOOverrunIMU=%d BusErrorIMU=%d BusTimeoutIMU=%d\r\n",
-			buf[sizeof(imu_data_t) + 0], buf[sizeof(imu_data_t) + 1],
-			buf[sizeof(imu_data_t) + 2], buf[sizeof(imu_data_t) + 3]);
+			        buf[sizeof(imu_data_t) + 0], buf[sizeof(imu_data_t) + 1],
+			        buf[sizeof(imu_data_t) + 2], buf[sizeof(imu_data_t) + 3]);
 			delay_ms(1);
 			/* Magnetometer Data */
 			printf("M, %f, %d, %d, %d, %d, %d, %d\r\n",
-			page * 0.01, data->mag.x, data->mag.y, data->mag.z,
-			data->temperature, data->tip_pressed, page);
+			       page * 0.01, data->mag.x, data->mag.y, data->mag.z,
+			       data->temperature, data->tip_pressed, page);
 			delay_ms(1);
 			/* Accelerometer Data */
 			for(i=0; i < data->num_accel; i++, a_sample++){
 				printf("A, %f, %d, %d, %d, %d, %d, %d\r\n",
-				a_sample * 0.000625, data->accel[i].x, data->accel[i].y, data->accel[i].z,
-				data->temperature, data->tip_pressed, page);
+				       a_sample * 0.000625, data->accel[i].x, data->accel[i].y, data->accel[i].z,
+				       data->temperature, data->tip_pressed, page);
 				delay_ms(1);
 			}
 			/* Gyroscope Data */
 			for(i=0; i < data->num_gyro; i++, g_sample++){
 				printf("G, %f, %d, %d, %d, %d, %d, %d\r\n",
-				(float) g_sample / 760, data->gyro[i].x, data->gyro[i].y, data->gyro[i].z,
-				data->temperature, data->tip_pressed, page);
+				       (float) g_sample / 760, data->gyro[i].x, data->gyro[i].y, data->gyro[i].z,
+				       data->temperature, data->tip_pressed, page);
 				delay_ms(1);
 			}
 			page++;
@@ -124,7 +129,7 @@ int main(void){
 		
 }
 
-/* Print a debugging welcome message using write_str(). */
+/* Print a welcome message using write_str(). */
 static void welcome_message(void){
 	delay_ms(20); /* Helps the computer's UART synchronize. */
 	write_str("NoteOn Smart Pen Firmware built on ");

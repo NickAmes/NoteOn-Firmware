@@ -1,5 +1,5 @@
-/* Housekeeping service. Periodically performs low-priority tasks like updating
- * the battery voltage. Uses timer 6 to periodically call the housekeeping task.
+/* Housekeeping service. Periodically performs low-priority tasks (such as
+ * checking the battery voltage). Uses TIM6.
  *
  * This file is a part of the firmware for the NoteOn Smartpen.
  * Copyright 2014 Nick Ames <nick@fetchmodus.org>. Licensed under the GNU GPLv3.
@@ -10,8 +10,7 @@
 /* The housekeeping task runs every HOUSEKEEPING_PERIOD_MS milliseconds. When it
  * runs, it calls all functions registered in HousekeepingTasks. Each slot in
  * HousekeepingTasks is assigned to a peripheral driver, which places a pointer in
- * its slot to have a function called periodically. NULL
- * slots are ignored. */
+ * its slot to have a function called periodically. NULL slots are ignored. */
 
 /* Housekeeping task period, in milliseconds (ms). */
 #define HOUSEKEEPING_PERIOD_MS 500

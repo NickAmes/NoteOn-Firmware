@@ -1,5 +1,5 @@
-/* Housekeeping service. Periodically performs low-priority tasks like updating
- * the battery voltage. Uses timer 6 to periodically call the housekeeping task.
+/* Housekeeping service. Periodically performs low-priority tasks (such as
+ * checking the battery voltage). Uses TIM6.
  *
  * This file is a part of the firmware for the NoteOn Smartpen.
  * Copyright 2014 Nick Ames <nick@fetchmodus.org>. Licensed under the GNU GPLv3.

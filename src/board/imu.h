@@ -105,7 +105,7 @@ imu_data_t *get_buf_imu(void);
  * provided by get_buf_imu(). */
 void release_buf_imu(void);
 
-/* Initialize the IMU. start_task_imu() must be called after this function
+/* Initialize the IMU. start_imu() must be called after this function
  * to synchronize the IMU and start the data streaming task.
  * Returns 0 on success, -1 on error. */
 int init_imu(void);

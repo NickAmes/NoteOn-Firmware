@@ -215,6 +215,7 @@ void i2c1_er_isr(){
 
 /* Add a ticket to the conveyor. The ticket will be copied (and therefore
  * doesn't need to exist after the function call) but the data will not.
+ * Pointers in the ticket must remain valid until done_flag has been set.
  * This function may be called from an interrupt as long as that interrupt has
  * a priority value greater than (less urgent) or equal to I2C_IRQ_PRIORITY.
  * Returns:

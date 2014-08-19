@@ -8,7 +8,7 @@
 #ifndef USART_H
 #define USART_H
 
-/* After initialize the USART with init_usart, use the read() and write()
+/* After initializing the USART with init_usart, use the read() and write()
  * (or stdio functions) to receive and send data.
  * WARNING: stdio functions that read() currently don't work.
  * read() and write() will block until the data has been transfered. */

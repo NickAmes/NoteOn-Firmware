@@ -54,7 +54,7 @@ void program_page_mem(uint32_t page, const uint8_t *data);
  * stall until erasing is finished. */
 void erase_sector_mem(uint16_t sector);
 
-/* Erase the specified subsectors. Erasing sets all bits to 1.
+/* Erase the specified subsector. Erasing sets all bits to 1.
  * WARNING: Erasing a subsector can take up to 800 ms to complete.
  * This function will return quickly and the process
  * happens internally in the chip, but subsequent memory operations will

@@ -27,7 +27,7 @@ typedef struct i2c_ticket_t {
 			              * may be NULL. */
 	void (*done_callback)(void); /* If not NULL, this function will be
 	                              * called if the transaction completes successfully. */
-	volatile uint32_t *at_time;  /* If not NULL, this will be set the the value of
+	volatile uint32_t *at_time;  /* If not NULL, this will be set to the the value of
 	                              * SystemTime at the moment the transfer was
 			              * completed. If an error occurs, this is not set. */
 } i2c_ticket_t;
@@ -51,6 +51,7 @@ typedef struct i2c_ticket_t {
 
 /* Add a ticket to the conveyor. The ticket will be copied (and therefore
  * doesn't need to exist after the function call) but the data will not.
+ * Pointers in the ticket must remain valid until done_flag has been set.
  * This function may be called from an interrupt as long as that interrupt has
  * a priority value greater than (less urgent) or equal to I2C_IRQ_PRIORITY.
  * Returns:
