@@ -3,7 +3,7 @@
  *
  * This file is a part of the firmware for the NoteOn Smartpen.
  * Copyright 2014 Nick Ames <nick@fetchmodus.org>. Licensed under the GNU GPLv3.
- * Contains code from the libopencm3 project.                                 */
+ * NoteOn Contains code from the libopencm3 and newlib projects.              */
 #include "led.h"
 #include <libopencm3/stm32/rcc.h>
 
