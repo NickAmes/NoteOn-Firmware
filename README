@@ -1,11 +1,14 @@
 NoteON Smartpen Firmware
 ========================
-Part of the NoteOn Smartpen Project - TODO: Link to HaD Projects Page
+Part of the NoteOn Smartpen Project - http://hackaday.io/project/2678-NoteOn-Smartpen
 Copyright 2014 Nick Ames <nick@fetchmodus.org>
 Licensed under the GNU GPLv3. See LICENSE file.
 
 Current Status
 --------------
+Drivers for on-chip peripherals, battery gas gauge, and external flash
+have been completed and tested. A high data rate driver for the IMU is in
+development.
 
 Required Software
 -----------------
