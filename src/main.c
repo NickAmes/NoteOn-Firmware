@@ -44,9 +44,24 @@ int main(void){
 	/* IMU data streaming test code.
 	 * The data rate is too fast for the USART, so the data is recorded to
 	 * the external flash memory and read out later. */
-	enum {ERASE, RECORD, PLAYBACK} mode = PLAYBACK;
+	enum {ERASE, RECORD, PLAYBACK, TEST} mode = TEST;
+	
+	if(TEST == mode){
+		/* Get data from the IMU without recording it to memory. */
+		uint32_t count;
+		imu_data_t *data;
+		printf("Testing...\r\n");
+		fflush(stdout);
+		start_imu();
+		while(1){
+			while(NULL == (data = get_buf_imu()));
+			release_buf_imu();
+			count++;
+			if((count % 30) == 0)led_toggle();
+		}
+	}
 
-	if(ERASE == mode){
+	else if(ERASE == mode){
 		/* Erase Data. */
 		printf("Erasing...\r\n");
 		erase_sector_mem(0);
