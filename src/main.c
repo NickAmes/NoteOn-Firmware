@@ -200,7 +200,8 @@ uint8_t init_system(void){
 	if(1)status |= ERROR_BLUETOOTH;
 	if(init_memory())status |= ERROR_MEMORY;
 	if(init_imu())status |= ERROR_IMU;
-	if(init_battery())status |= ERROR_BATTERY;
+	//TODO
+	//if(init_battery())status |= ERROR_BATTERY;
 	return status;
 }
 

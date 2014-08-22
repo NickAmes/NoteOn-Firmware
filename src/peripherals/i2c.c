@@ -16,6 +16,9 @@
 #include "systick.h"
 #include "basepri.h"
 
+//TODO
+#include "usart.h"
+#include <stdio.h>
 
 /* I2C Conveyor Reading Steps
  * 1. start_conveyor() sets number of data = 1, direction=write, and slave address.
@@ -123,9 +126,13 @@ static void start_conveyor(void){
 	TicketState = SENT_ADDRESS;
 }
 
+/* Cleanup after an error. This is a separate function because
+ * errors can be caught by the event and error interrupts. */
 static void i2c_error_cleanup(void){
 	/* On error: set the error flag on the current ticket, reset
 	 * the I2C peripheral, and proceed to the next ticket if there is one. */
+	//TODO
+	write_str("I2C Error\r\n");
 	init_i2c();
 	dma_disable_channel(DMA1, DMA_CHANNEL6);
 	dma_disable_channel(DMA1, DMA_CHANNEL7);
@@ -223,6 +230,7 @@ void i2c1_er_isr(){
  *  -1 - NULL data field or ticket pointer.
  *  -2 - Conveyor is full. Please try again later. */
 int add_ticket_i2c(i2c_ticket_t *ticket){
+	fflush(stdout);
 	if(NULL == ticket)return -1;
 	if(NULL == ticket->data)return -1;
 	if(!I2CEnabled)init_i2c();
@@ -234,6 +242,8 @@ int add_ticket_i2c(i2c_ticket_t *ticket){
 		if(NULL != ticket->done_flag){
 			*ticket->done_flag = I2C_FULL;
 		}
+		//TODO
+		write_str("Conveyor full\r\n");
 		return -2; /* Conveyor is full. */
 	}
 	int ticket_index = open_ticket();

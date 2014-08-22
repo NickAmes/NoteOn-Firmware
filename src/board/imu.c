@@ -16,6 +16,9 @@
 #include <libopencm3/stm32/timer.h>
 #include <math.h>
 
+//TODO
+#include "../peripherals/usart.h"
+
 /* I2C address of LSM9DS0TR accelerometer with SDO_XM high. */
 #define IMU_ACCEL_ADDR 0x1D
 /* I2C address of LSM9DS0TR gyroscope with SDO_G high. */
@@ -102,6 +105,8 @@ static void fetch_finish(void);
 
 /* Get the number of data point in the IMU accelerometer's FIFO. */
 static void fetch_imu_accel_num(void){
+	//TODO
+	write_str("{1}\r\n");
 	Ticket.addr = IMU_ACCEL_ADDR;
 	Ticket.reg = 0x2F; /* FIFO_SRC_REG */
 	Ticket.data = &CurrentBuf->num_accel; /* NOTE: The number of points in the
@@ -114,6 +119,8 @@ static void fetch_imu_accel_num(void){
 
 /* Get data points from the IMU accelerometer's FIFO. */
 static void fetch_imu_accel_data(void){
+	//TODO
+	write_str("{2}\r\n");
 	/* Extract number of points in FIFO from FIFO_SRC_REG. */
 	if(CurrentBuf->num_accel & 0x40){ /* OVRN bit. */
 		FIFOOverrunIMU = true;
@@ -130,6 +137,8 @@ static void fetch_imu_accel_data(void){
 
 /* Get the number of data points in the IMU gyroscope's FIFO. */
 static void fetch_imu_gyro_num(void){
+	//TODO
+	write_str("{3}\r\n");
 	Ticket.addr = IMU_GYRO_ADDR;
 	Ticket.reg = 0x2F; /* FIFO_SRC_REG_G */
 	Ticket.data = &CurrentBuf->num_gyro; /* NOTE: The number of points in the
@@ -142,6 +151,8 @@ static void fetch_imu_gyro_num(void){
 
 /* Get data points from the IMU gyroscope's FIFO. */
 static void fetch_imu_gyro_data(void){
+	//TODO
+	write_str("{4}\r\n");
 	/* Extract number of points in FIFO from FIFO_SRC_REG. */
 	if(CurrentBuf->num_gyro & 0x40){ /* OVRN bit. */
 		FIFOOverrunIMU = true;
@@ -158,6 +169,8 @@ static void fetch_imu_gyro_data(void){
 
 /* Get magnetometer data. */
 static void fetch_imu_mag(void){
+	//TODO
+	write_str("{5}\r\n");
 	Ticket.addr = IMU_ACCEL_ADDR;
 	Ticket.reg = 0x88; /* OUT_X_L_M with auto-increment bit set */
 	Ticket.data = &CurrentBuf->mag;
@@ -169,6 +182,8 @@ static void fetch_imu_mag(void){
 
 /* Finish the current data fetch. */
 static void fetch_finish(void){
+	//TODO
+	write_str("{6}\r\n");
 	/* Store tip switch state. */
 	CurrentBuf->tip_pressed = tip_switch_pressed();
 
@@ -185,6 +200,8 @@ static void fetch_finish(void){
 
 /* Data streaming task interrupt. Called every 10ms by TIM1. */
 void tim1_up_tim16_isr(void){
+	//TODO
+	write_str("{0s}\r\n");
 	TIM1_SR = 0; /* Clear the interrupt flag so the ISR will exit. */
 	
 	if(false == TaskComplete){
@@ -194,10 +211,14 @@ void tim1_up_tim16_isr(void){
 			 * error has not occurred. It's probably still in
 			 * progress. */
 			BusTimeoutIMU = true;
+			//TODO
+			write_str("{0T}\r\n");
 			return;
 		} else {
 			/* Previous fetch has not completed due to a bus error. */
 			BusErrorIMU = true;
+			//TODO
+			write_str("{0E}\r\n");
 		}
 	}
 	
@@ -213,6 +234,8 @@ void tim1_up_tim16_isr(void){
 		/* No buffer available. */
 		BufferOverrunIMU = true;
 		TaskComplete = true;
+		//TODO
+		write_str("{0B}\r\n");
 		return;
 	}
 
@@ -222,9 +245,9 @@ void tim1_up_tim16_isr(void){
 
 	TaskComplete = false;
 	Done = I2C_BUSY;
+	//TODO
+	write_str("{0n}\r\n");
 	fetch_imu_accel_num();
-
-	
 }
 
 /* Setup TIM1 and start the data streaming task. */
@@ -242,7 +265,8 @@ static void start_stream_task(void){
 }
 
 /* Returns a pointer to an IMU data structure if fresh data is available.
- * Otherwise, NULL is returned. Copy data out of the buffer as quickly as
+ * Otherwise, NULL is returned.
+ * NOTE: Copy data out of the buffer as quickly as
  * possible and call release_buf_imu() when done! */
 imu_data_t *get_buf_imu(void){
 	if(BUF_FRESHEST == BufferState[0]){
@@ -393,8 +417,6 @@ int init_imu(void){
 		return -1;
 	}
 
-	
-
 	/* TODO: Try enabling BDU mode for the benefit of the magnetometer. */
 
 	return 0;
@@ -446,7 +468,8 @@ void start_imu(void){
 	start_stream_task();
 	
 	/* Start temperature update task. */
-	HousekeepingTasks[IMU_TEMP_HK_SLOT] = &update_imu_temp;
+	//TODO
+	//HousekeepingTasks[IMU_TEMP_HK_SLOT] = &update_imu_temp;
 }
 
 /* Shutdown the IMU data streaming task and put the IMU in a low-power state. */

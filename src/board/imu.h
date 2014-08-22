@@ -97,7 +97,8 @@ typedef struct imu_data_t {
 } imu_data_t;
 
 /* Returns a pointer to an IMU data structure if fresh data is available.
- * Otherwise, NULL is returned. Copy data out of the buffer as quickly as
+ * Otherwise, NULL is returned.
+ * NOTE: Copy data out of the buffer as quickly as
  * possible and call release_buf_imu() when done! */
 imu_data_t *get_buf_imu(void);
 
