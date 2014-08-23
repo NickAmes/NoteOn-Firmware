@@ -18,6 +18,7 @@
 
 //TODO
 #include "../peripherals/usart.h"
+extern bool DebugDone;
 
 /* I2C address of LSM9DS0TR accelerometer with SDO_XM high. */
 #define IMU_ACCEL_ADDR 0x1D
@@ -186,11 +187,15 @@ static void fetch_imu_mag(void){
 static void fetch_finish(void){
 	//TODO
 	write_str("{6}\r\n");
+	//TODO
+	DebugDone = true;
+	
 	/* Store tip switch state. */
 	CurrentBuf->tip_pressed = tip_switch_pressed();
 
 	/* Store current IMU temperature. */
 	CurrentBuf->temperature = IMUTemperature;
+
 
 	if(BUF_FRESH == BufferState[0] || BUF_FRESH == BufferState[1]){
 		BufferState[CurrentBufIndex] = BUF_FRESHEST;

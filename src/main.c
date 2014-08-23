@@ -34,6 +34,10 @@ void print_status_message(uint8_t status);
  * TODO: uC shutdown and button wakeup. */
 void shutdown_system(void);
 
+//TODO
+bool DebugDone;
+#include <libopencm3/stm32/dma.h>
+
 int main(void){
 	uint8_t status;
 	status = init_system();
@@ -53,6 +57,12 @@ int main(void){
 		printf("Testing...\r\n");
 		fflush(stdout);
 		start_imu();
+		//TODO
+		while(!DebugDone){
+			printf("I2C1_CR2: 0x%X  I2C1_ISR: 0x%X DMA1_CNDTR7 (read):0x%X  DMA1_CNDTR6 (write):0x%X\r\n",
+			       I2C1_CR2, I2C1_ISR, DMA1_CNDTR7, DMA1_CNDTR6);
+			fflush(stdout);
+		}
 		while(1){
 			while(NULL == (data = get_buf_imu()));
 			release_buf_imu();
