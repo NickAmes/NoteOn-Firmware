@@ -106,7 +106,7 @@ static void fetch_finish(void);
 /* Get the number of data point in the IMU accelerometer's FIFO. */
 static void fetch_imu_accel_num(void){
 	//TODO
-	write_str("{1}\r\n");
+	//write_str("{1}\r\n");
 	Ticket.addr = IMU_ACCEL_ADDR;
 	Ticket.reg = 0x2F; /* FIFO_SRC_REG */
 	Ticket.data = &CurrentBuf->num_accel; /* NOTE: The number of points in the
@@ -120,7 +120,7 @@ static void fetch_imu_accel_num(void){
 /* Get data points from the IMU accelerometer's FIFO. */
 static void fetch_imu_accel_data(void){
 	//TODO
-	write_str("{2}\r\n");
+	//write_str("{2}\r\n");
 	/* Extract number of points in FIFO from FIFO_SRC_REG. */
 	if(CurrentBuf->num_accel & 0x40){ /* OVRN bit. */
 		FIFOOverrunIMU = true;
@@ -138,7 +138,7 @@ static void fetch_imu_accel_data(void){
 /* Get the number of data points in the IMU gyroscope's FIFO. */
 static void fetch_imu_gyro_num(void){
 	//TODO
-	write_str("{3}\r\n");
+	//write_str("{3s}\r\n");
 	Ticket.addr = IMU_GYRO_ADDR;
 	Ticket.reg = 0x2F; /* FIFO_SRC_REG_G */
 	Ticket.data = &CurrentBuf->num_gyro; /* NOTE: The number of points in the
@@ -146,13 +146,15 @@ static void fetch_imu_gyro_num(void){
 	                                      * the register data. */
 	Ticket.size = 1;
 	Ticket.done_callback = &fetch_imu_gyro_data;
+	//TODO
+	//write_str("{3c}\r\n");
 	add_ticket_i2c((i2c_ticket_t *)&Ticket);
 }
 
 /* Get data points from the IMU gyroscope's FIFO. */
 static void fetch_imu_gyro_data(void){
 	//TODO
-	write_str("{4}\r\n");
+	//write_str("{4}\r\n");
 	/* Extract number of points in FIFO from FIFO_SRC_REG. */
 	if(CurrentBuf->num_gyro & 0x40){ /* OVRN bit. */
 		FIFOOverrunIMU = true;
@@ -221,7 +223,7 @@ void tim1_up_tim16_isr(void){
 			write_str("{0E}\r\n");
 		}
 	}
-	
+	write_str("{0C}\r\n");
 	if(BUF_STALE == BufferState[0]){
 		BufferState[0] = BUF_WRITING;
 		CurrentBuf = &Buffer[0];
@@ -247,6 +249,9 @@ void tim1_up_tim16_isr(void){
 	Done = I2C_BUSY;
 	//TODO
 	write_str("{0n}\r\n");
+	//TODO
+	nvic_disable_irq(NVIC_TIM1_UP_TIM16_IRQ);
+	
 	fetch_imu_accel_num();
 }
 

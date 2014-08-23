@@ -114,7 +114,7 @@ static volatile enum {SENT_ADDRESS,     /* The address has been sent. */
  * The function does not check if the I2C peripheral is busy, and should
  * only be called when the bus is idle. */
 static void start_conveyor(void){
-	/* No busyness check is performed, as we can't block here. */
+	/* No I2C bus busyness check is performed, as we can't block here. */
 	if(I2C_READ == Conveyor[CurrentTicket].rw){
 		i2c_set_bytes_to_transfer(I2C1, 1);
 	} else {
@@ -129,10 +129,10 @@ static void start_conveyor(void){
 /* Cleanup after an error. This is a separate function because
  * errors can be caught by the event and error interrupts. */
 static void i2c_error_cleanup(void){
+	//TODO
+	write_str("Error. \r\n");
 	/* On error: set the error flag on the current ticket, reset
 	 * the I2C peripheral, and proceed to the next ticket if there is one. */
-	//TODO
-	write_str("I2C Error\r\n");
 	init_i2c();
 	dma_disable_channel(DMA1, DMA_CHANNEL6);
 	dma_disable_channel(DMA1, DMA_CHANNEL7);
@@ -157,7 +157,7 @@ static void i2c_error_cleanup(void){
 	}
 }
 
-/* I2C event interrupt. Handles STOP, TXIS, and NACK events. */
+/* I2C event interrupt. Handles TC, TXIS, and NACK events. */
 void i2c1_ev_exti23_isr(){
 	if(I2C1_ISR & I2C_ISR_NACKF){
 		/* NACK error */
@@ -175,7 +175,6 @@ void i2c1_ev_exti23_isr(){
 			 * be handled by the TC event.*/
 			TicketState = SENT_REGISTER;
 		}
-		
 	} else if(I2C1_ISR & I2C_ISR_TC){
 		/* Transfer complete.
 		 * Send repeated start or wrap up the ticket. */
@@ -230,7 +229,6 @@ void i2c1_er_isr(){
  *  -1 - NULL data field or ticket pointer.
  *  -2 - Conveyor is full. Please try again later. */
 int add_ticket_i2c(i2c_ticket_t *ticket){
-	fflush(stdout);
 	if(NULL == ticket)return -1;
 	if(NULL == ticket->data)return -1;
 	if(!I2CEnabled)init_i2c();
@@ -243,7 +241,7 @@ int add_ticket_i2c(i2c_ticket_t *ticket){
 			*ticket->done_flag = I2C_FULL;
 		}
 		//TODO
-		write_str("Conveyor full\r\n");
+		write_str("Conveyor full. \r\n");
 		return -2; /* Conveyor is full. */
 	}
 	int ticket_index = open_ticket();

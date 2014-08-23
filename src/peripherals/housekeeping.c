@@ -19,7 +19,6 @@ void tim6_dac_isr(){
 			(HousekeepingTasks[i])();
 		}
 	}
-	
 }
 
 /* Housekeeping task slots. */

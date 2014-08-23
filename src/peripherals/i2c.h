@@ -44,7 +44,7 @@ typedef struct i2c_ticket_t {
 
 /* Number of tickets that the conveyor can hold. */
 //TODO
-#define I2C_CONVEYOR_SIZE 4
+#define I2C_CONVEYOR_SIZE 2
 //#define I2C_CONVEYOR_SIZE 8
 
 /* Priority of I2C interrupts. This is the true numeric value, not the
