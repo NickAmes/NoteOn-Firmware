@@ -156,6 +156,9 @@ static void fetch_imu_gyro_num(void){
 static void fetch_imu_gyro_data(void){
 	//TODO
 	//write_str("{4}\r\n");
+	//TODO
+	GPIOA_BSRR = GPIO11 << 16;
+	
 	/* Extract number of points in FIFO from FIFO_SRC_REG. */
 	if(CurrentBuf->num_gyro & 0x40){ /* OVRN bit. */
 		FIFOOverrunIMU = true;
@@ -174,6 +177,11 @@ static void fetch_imu_gyro_data(void){
 static void fetch_imu_mag(void){
 	//TODO
 	write_str("{5}\r\n");
+	
+	//TODO
+	GPIOA_BSRR = GPIO11;
+	gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO6 | GPIO7);
+
 	Ticket.addr = IMU_ACCEL_ADDR;
 	Ticket.reg = 0x88; /* OUT_X_L_M with auto-increment bit set */
 	Ticket.data = &CurrentBuf->mag;

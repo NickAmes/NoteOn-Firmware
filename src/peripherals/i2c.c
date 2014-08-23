@@ -114,6 +114,15 @@ static volatile enum {SENT_ADDRESS,     /* The address has been sent. */
  * The function does not check if the I2C peripheral is busy, and should
  * only be called when the bus is idle. */
 static void start_conveyor(void){
+	//TODO
+	if(i2c_busy(I2C1)){
+		write_str("I2C busy at start_conveyor.\r\n");
+	}
+	while(i2c_busy(I2C1)){
+		write_str("Waiting: I2C busy at start_conveyor.\r\n");
+		delay_ms(100);
+	}
+	
 	/* No I2C bus busyness check is performed, as we can't block here. */
 	if(I2C_READ == Conveyor[CurrentTicket].rw){
 		i2c_set_bytes_to_transfer(I2C1, 1);
@@ -192,6 +201,16 @@ void i2c1_ev_exti23_isr(){
 			i2c_disable_txdma(I2C1);
 			i2c_disable_rxdma(I2C1);
 			TicketState = TRANSFER_DONE;
+			
+			//TODO
+// 			if(i2c_busy(I2C1)){
+// 				write_str("I2C busy during TC ISR.\r\n");
+// 			}
+// 			while(i2c_busy(I2C1)){
+// 				
+// 			}
+
+			
 			if(CurrentTicket >= 0){
 				if(NULL != Conveyor[CurrentTicket].at_time){
 					*Conveyor[CurrentTicket].at_time = SystemTime;
@@ -273,6 +292,7 @@ void init_i2c(void){
 	i2c_peripheral_disable(I2C1);
 	i2c_enable_analog_filter(I2C1);
 	i2c_set_digital_filter(I2C1, I2C_CR1_DNF_DISABLED);
+
 	/* Setup I2C Fast Mode (400MHz) */
 	i2c_set_prescaler(I2C1, 0);
 	i2c_set_scl_low_period(I2C1, 0x9);

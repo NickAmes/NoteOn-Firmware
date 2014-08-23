@@ -56,12 +56,17 @@ int main(void){
 		imu_data_t *data;
 		printf("Testing...\r\n");
 		fflush(stdout);
+		
+		//TODO
+		GPIOA_BSRR = GPIO11;
+		gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO11);
+
 		start_imu();
 		//TODO
 		while(!DebugDone){
-			printf("I2C1_CR2: 0x%X  I2C1_ISR: 0x%X DMA1_CNDTR7 (read):0x%X  DMA1_CNDTR6 (write):0x%X\r\n",
-			       I2C1_CR2, I2C1_ISR, DMA1_CNDTR7, DMA1_CNDTR6);
-			fflush(stdout);
+			//printf("I2C1_CR2: 0x%X  I2C1_ISR: 0x%X DMA1_CNDTR7 (read):0x%X  DMA1_CNDTR6 (write):0x%X\r\n",
+			//       I2C1_CR2, I2C1_ISR, DMA1_CNDTR7, DMA1_CNDTR6);
+			//fflush(stdout);
 		}
 		while(1){
 			while(NULL == (data = get_buf_imu()));
