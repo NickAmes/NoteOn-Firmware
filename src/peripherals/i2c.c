@@ -188,6 +188,12 @@ void i2c1_ev_exti23_isr(){
 		/* Transfer complete.
 		 * Send repeated start or wrap up the ticket. */
 		if(SENT_REGISTER == TicketState){
+			//TODO
+			if(0 == Conveyor[CurrentTicket].size){
+				write_str("0 size\r\n");
+			}
+
+
 			/* Send repeated start and DMA data for reading. */
 			i2c_set_read_transfer_dir(I2C1);
 			i2c_dma_read(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
@@ -274,6 +280,49 @@ int add_ticket_i2c(i2c_ticket_t *ticket){
 	return 0;
 }
 
+/* Add a ticket to the conveyor, with the ticket parameters given as arguments
+ * to the function.
+ * Returns:
+ *   0 - Success.
+ *  -1 - NULL data field or ticket pointer.
+ *  -2 - Conveyor is full. Please try again later. */
+int add_ticket_i2c_f(uint8_t rw, uint8_t addr, uint8_t reg,
+		     volatile void *data, uint8_t size,
+		     volatile uint8_t *done_flag, void (*done_callback)(void),
+		     volatile uint32_t *at_time){
+	i2c_ticket_t ticket = {.rw = rw, .addr = addr, .reg = reg, .data = data,
+	                       .size = size, .done_flag = done_flag,
+	                       .done_callback = done_callback, .at_time = at_time};
+	return add_ticket_i2c(&ticket);
+}
+	
+
+/* Add a ticket to the conveyor, with the ticket parameters given as arguments
+ * to the function. The function will wait until the ticket is processed
+ * before returning. The return value indicated the result of the ticket.
+ * Returns:
+ *   2 - I2C_ERROR
+ *   1 - I2C_DONE
+ *  -1 - NULL data field or ticket pointer.
+ *  -2 - Conveyor is full. Please try again later. */
+int add_ticket_i2c_w(uint8_t rw, uint8_t addr, uint8_t reg,
+		     volatile void *data, uint8_t size,
+		     volatile uint32_t *at_time){
+	uint8_t done_flag = 0;
+	int r;
+	i2c_ticket_t ticket = {.rw = rw, .addr = addr, .reg = reg, .data = data,
+	                       .size = size, .done_flag = &done_flag,
+	                       .done_callback = 0, .at_time = at_time};
+	r = add_ticket_i2c(&ticket);
+	if(r < 0){
+		return r;
+	} else {
+		while(0 == done_flag){
+			/* Wait for transaction to complete. */
+		}
+		return done_flag;
+	}
+}
 
 /* Setup the I2C1 peripheral. */
 void init_i2c(void){
@@ -294,6 +343,7 @@ void init_i2c(void){
 	i2c_set_digital_filter(I2C1, I2C_CR1_DNF_DISABLED);
 
 	/* Setup I2C Fast Mode (400MHz) */
+	//TODO
 	i2c_set_prescaler(I2C1, 0);
 	i2c_set_scl_low_period(I2C1, 0x9);
 	i2c_set_scl_high_period(I2C1, 0x3);
