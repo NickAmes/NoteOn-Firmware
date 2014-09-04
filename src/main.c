@@ -62,6 +62,8 @@ int main(void){
 		gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO11);
 
 		start_imu();
+		delay_ms(100);
+		led_off();
 		while(1){
 			while(NULL == (data = get_buf_imu()));
 			release_buf_imu();

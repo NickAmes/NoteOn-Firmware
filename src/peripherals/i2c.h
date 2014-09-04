@@ -56,6 +56,8 @@ typedef struct i2c_ticket_t {
  * Pointers in the ticket must remain valid until done_flag has been set.
  * This function may be called from an interrupt as long as that interrupt has
  * a priority value greater than (less urgent) or equal to I2C_IRQ_PRIORITY.
+ * If the ticket size is 0, no transfer will occur, but this function will
+ * behave as if the transaction was successful.
  * Returns:
  *   0 - Success.
  *  -1 - NULL data field or ticket pointer.

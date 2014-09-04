@@ -155,9 +155,7 @@ static void fetch_imu_gyro_num(void){
 /* Get data points from the IMU gyroscope's FIFO. */
 static void fetch_imu_gyro_data(void){
 	//TODO
-	//write_str("{4}\r\n");
-	//TODO
-	GPIOA_BSRR = GPIO11 << 16;
+	write_str("{4}\r\n");
 	
 	/* Extract number of points in FIFO from FIFO_SRC_REG. */
 	if(CurrentBuf->num_gyro & 0x40){ /* OVRN bit. */

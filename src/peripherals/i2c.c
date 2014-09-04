@@ -16,10 +16,6 @@
 #include "systick.h"
 #include "basepri.h"
 
-//TODO
-#include "usart.h"
-#include <stdio.h>
-
 /* I2C Conveyor Reading Steps
  * 1. start_conveyor() sets number of data = 1, direction=write, and slave address.
  *  --The TXIS interrupt is triggered after the slave address has been sent.--
@@ -114,15 +110,6 @@ static volatile enum {SENT_ADDRESS,     /* The address has been sent. */
  * The function does not check if the I2C peripheral is busy, and should
  * only be called when the bus is idle. */
 static void start_conveyor(void){
-	//TODO
-	if(i2c_busy(I2C1)){
-		write_str("I2C busy at start_conveyor.\r\n");
-	}
-	while(i2c_busy(I2C1)){
-		write_str("Waiting: I2C busy at start_conveyor.\r\n");
-		delay_ms(100);
-	}
-	
 	/* No I2C bus busyness check is performed, as we can't block here. */
 	if(I2C_READ == Conveyor[CurrentTicket].rw){
 		i2c_set_bytes_to_transfer(I2C1, 1);
@@ -167,9 +154,6 @@ static void i2c_error_cleanup(void){
 /* I2C event interrupt. Handles TC, TXIS, and NACK events. */
 void i2c1_ev_exti23_isr(){
 	if(I2C1_ISR & I2C_ISR_NACKF){
-		//TODO
-		write_str("NAC. \r\n");
-		
 		/* NACK error */
 		I2C1_ICR |= I2C_ICR_NACKCF; /* Clear the NACK flag so the ISR will exit. */
 		i2c_error_cleanup();
@@ -189,12 +173,6 @@ void i2c1_ev_exti23_isr(){
 		/* Transfer complete.
 		 * Send repeated start or wrap up the ticket. */
 		if(SENT_REGISTER == TicketState){
-			//TODO
-			if(0 == Conveyor[CurrentTicket].size){
-				write_str("0 size\r\n");
-			}
-
-
 			/* Send repeated start and DMA data for reading. */
 			i2c_set_read_transfer_dir(I2C1);
 			i2c_dma_read(Conveyor[CurrentTicket].data, Conveyor[CurrentTicket].size);
@@ -232,9 +210,6 @@ void i2c1_ev_exti23_isr(){
 
 /* I2C error interrupt. */
 void i2c1_er_isr(){
-	//TODO
-	write_str("Other Error. \r\n");
-
 	I2C1_ICR |= 0x00003F00; /* Clear the error flag(s) so the ISR will exit. */
 	i2c_error_cleanup();
 }
@@ -244,6 +219,8 @@ void i2c1_er_isr(){
  * Pointers in the ticket must remain valid until done_flag has been set.
  * This function may be called from an interrupt as long as that interrupt has
  * a priority value greater than (less urgent) or equal to I2C_IRQ_PRIORITY.
+ * If the ticket size is 0, no transfer will occur, but this function will
+ * behave as if the transaction was successful.
  * Returns:
  *   0 - Success.
  *  -1 - NULL data field or ticket pointer.
@@ -251,6 +228,18 @@ void i2c1_er_isr(){
 int add_ticket_i2c(i2c_ticket_t *ticket){
 	if(NULL == ticket)return -1;
 	if(NULL == ticket->data)return -1;
+	if(0 == ticket->size){
+		if(NULL != ticket->at_time){
+			*ticket->at_time = SystemTime;
+		}
+		if(NULL != ticket->done_flag){
+			*ticket->done_flag = I2C_DONE;
+		}
+		if(NULL != ticket->done_callback){
+			ticket->done_callback();
+		}
+		return 0;
+	}
 	if(!I2CEnabled)init_i2c();
 	uint32_t save_basepri = get_basepri();
 	set_basepri(I2C_IRQ_PRIORITY); /* Disable I2C interrupts while allowing
@@ -260,8 +249,6 @@ int add_ticket_i2c(i2c_ticket_t *ticket){
 		if(NULL != ticket->done_flag){
 			*ticket->done_flag = I2C_FULL;
 		}
-		//TODO
-		write_str("Conveyor full. \r\n");
 		return -2; /* Conveyor is full. */
 	}
 	int ticket_index = open_ticket();
