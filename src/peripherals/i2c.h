@@ -79,7 +79,6 @@ int add_ticket_i2c_f(uint8_t rw, uint8_t addr, uint8_t reg,
 * Returns:
 *   2 - I2C_ERROR
 *   1 - I2C_DONE
-*   0 - Success.
 *  -1 - NULL data field or ticket pointer.
 *  -2 - Conveyor is full. Please try again later. */
 int add_ticket_i2c_w(uint8_t rw, uint8_t addr, uint8_t reg,

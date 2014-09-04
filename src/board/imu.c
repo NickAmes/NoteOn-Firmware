@@ -176,12 +176,9 @@ static void fetch_imu_gyro_data(void){
 /* Get magnetometer data. */
 static void fetch_imu_mag(void){
 	//TODO
+	GPIOA_BSRR = GPIO11;
 	write_str("{5}\r\n");
 	
-	//TODO
-	GPIOA_BSRR = GPIO11;
-	gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO6 | GPIO7);
-
 	Ticket.addr = IMU_ACCEL_ADDR;
 	Ticket.reg = 0x88; /* OUT_X_L_M with auto-increment bit set */
 	Ticket.data = &CurrentBuf->mag;

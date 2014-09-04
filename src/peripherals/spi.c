@@ -11,9 +11,6 @@
 #include <libopencm3/cm3/nvic.h>
 #include <stdlib.h>
 
-//TODO
-#include "usart.h"
-
 /* If true, the peripheral is currently in use by a driver. */
 bool PeripheralInUse;
 
@@ -36,14 +33,12 @@ void init_spi(void){
  * function must not be called by the driver that currently
  * controls the peripheral. */
 void request_spi(void (*spi_available_callback)(void)){
-	//TODO
-	spi_available_callback();
-// 	if(PeripheralInUse){
-// 		SpiWaitingCallback = spi_available_callback;
-// 	} else {
-// 		PeripheralInUse = true;
-// 		spi_available_callback();
-// 	}
+	if(PeripheralInUse){
+		SpiWaitingCallback = spi_available_callback;
+	} else {
+		PeripheralInUse = true;
+		spi_available_callback();
+	}
 }
 
 /* Used to determine if cleanup is needed between DMA transfers. */
@@ -67,14 +62,13 @@ static void disable_and_reset_spi_properly(void){
  * be started before this function returns. This function should be called
  * whenever the bus can be released, to prevent one driver from hogging the bus. */
 void release_spi(void){
-	//TODO
-// 	disable_and_reset_spi_properly();
-// 	PeripheralInUse = false;
-// 	if(NULL != SpiWaitingCallback){
-// 		PeripheralInUse = true;
-// 		SpiWaitingCallback();
-// 		SpiWaitingCallback = NULL;
-// 	}
+	disable_and_reset_spi_properly();
+	PeripheralInUse = false;
+	if(NULL != SpiWaitingCallback){
+		PeripheralInUse = true;
+		SpiWaitingCallback();
+		SpiWaitingCallback = NULL;
+	}
 }
 
 /* Setup the SPI bus.  This function may cause spurious signals on the SPI bus,

@@ -136,10 +136,8 @@ static void start_conveyor(void){
 }
 
 /* Cleanup after an error. This is a separate function because
- * errors can be caught by the event and error interrupts. */
+ * errors can be caught by both the event and error interrupts. */
 static void i2c_error_cleanup(void){
-	//TODO
-	write_str("Error. \r\n");
 	/* On error: set the error flag on the current ticket, reset
 	 * the I2C peripheral, and proceed to the next ticket if there is one. */
 	init_i2c();
@@ -169,6 +167,9 @@ static void i2c_error_cleanup(void){
 /* I2C event interrupt. Handles TC, TXIS, and NACK events. */
 void i2c1_ev_exti23_isr(){
 	if(I2C1_ISR & I2C_ISR_NACKF){
+		//TODO
+		write_str("NAC. \r\n");
+		
 		/* NACK error */
 		I2C1_ICR |= I2C_ICR_NACKCF; /* Clear the NACK flag so the ISR will exit. */
 		i2c_error_cleanup();
@@ -207,16 +208,7 @@ void i2c1_ev_exti23_isr(){
 			i2c_disable_txdma(I2C1);
 			i2c_disable_rxdma(I2C1);
 			TicketState = TRANSFER_DONE;
-			
-			//TODO
-// 			if(i2c_busy(I2C1)){
-// 				write_str("I2C busy during TC ISR.\r\n");
-// 			}
-// 			while(i2c_busy(I2C1)){
-// 				
-// 			}
 
-			
 			if(CurrentTicket >= 0){
 				if(NULL != Conveyor[CurrentTicket].at_time){
 					*Conveyor[CurrentTicket].at_time = SystemTime;
@@ -240,6 +232,9 @@ void i2c1_ev_exti23_isr(){
 
 /* I2C error interrupt. */
 void i2c1_er_isr(){
+	//TODO
+	write_str("Other Error. \r\n");
+
 	I2C1_ICR |= 0x00003F00; /* Clear the error flag(s) so the ISR will exit. */
 	i2c_error_cleanup();
 }
@@ -343,7 +338,6 @@ void init_i2c(void){
 	i2c_set_digital_filter(I2C1, I2C_CR1_DNF_DISABLED);
 
 	/* Setup I2C Fast Mode (400MHz) */
-	//TODO
 	i2c_set_prescaler(I2C1, 0);
 	i2c_set_scl_low_period(I2C1, 0x9);
 	i2c_set_scl_high_period(I2C1, 0x3);
