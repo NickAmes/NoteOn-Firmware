@@ -157,6 +157,7 @@ int main(void){
 		imu_erase();
 		imu_record(100);
 		imu_playback();
+		led_off();
 	} else if(TEST == mode){
 		imu_test();
 	} else if(ERASE == mode){

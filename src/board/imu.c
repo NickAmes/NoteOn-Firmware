@@ -16,6 +16,9 @@
 #include <libopencm3/stm32/timer.h>
 #include <math.h>
 
+//TODO
+#include "../peripherals/usart.h"
+
 /* I2C address of LSM9DS0TR accelerometer with SDO_XM high. */
 #define IMU_ACCEL_ADDR 0x1D
 /* I2C address of LSM9DS0TR gyroscope with SDO_G high. */
@@ -285,117 +288,60 @@ void release_buf_imu(void){
  * to synchronize the IMU and start the data streaming task.
  * Returns 0 on success, -1 on error. */
 int init_imu(void){
-	i2c_ticket_t a_ticket, g_ticket;
-	volatile uint8_t a_done, g_done;
-	volatile uint8_t a_data, g_data;
-	
-	a_ticket.addr = IMU_ACCEL_ADDR; /* LSM9DS0TR accelerometer I2C address with SDO_XM high. */
-	a_ticket.done_flag = &a_done;
-	a_ticket.at_time = 0;
-	a_ticket.done_callback = 0;
-	a_ticket.data = &a_data;
-	a_ticket.size = 1;
-
-	g_ticket.addr = IMU_GYRO_ADDR; /* LSM9DS0TR gyroscope I2C address with SDO_G high. */
-	g_ticket.done_flag = &g_done;
-	g_ticket.at_time = 0;
-	g_ticket.done_callback = 0;
-	g_ticket.data = &g_data;
-	g_ticket.size = 1;
-
 	/* Test that the accelerometer and gyroscope are responding. */
-	a_ticket.rw = I2C_READ;
-	a_ticket.reg = 0x0F; /* WHO_AM_I_XM */
-	g_ticket.rw = I2C_READ;
-	g_ticket.reg = 0x0F; /* WHO_AM_I_G */
-	a_done = 0;
-	g_done = 0;
-	add_ticket_i2c(&a_ticket);
-	add_ticket_i2c(&g_ticket);
-	while(I2C_BUSY == a_done || I2C_BUSY == g_done){
-		/* Wait for tickets to be processed. */
+	uint8_t a_data, g_data;
+	
+	if(I2C_DONE != read_byte_i2c(IMU_ACCEL_ADDR, 0x0F, /* WHO_AM_I_XM */
+	               &a_data)){
+		return -1; /* Bus error. */
 	}
-	if(I2C_DONE != a_done || I2C_DONE != g_done){
-		/* Bus error. */
-		return -1;
+	if(I2C_DONE != read_byte_i2c(IMU_GYRO_ADDR, 0x0F, /* WHO_AM_I_G */
+	               &g_data)){
+		return -1; /* Bus error. */
 	}
+
 	if(0x49 != a_data || 0xD4 != g_data){
 		/* Incorrect WHO_AM_I values. */
 		return -1;
 	}
+	
 
 	/* Soft reset. */
-	a_ticket.rw = I2C_WRITE;
-	a_ticket.reg = 0x1F; /* CTRL_REG0_XM */
-	a_data = 0x80; /* Set reboot flag. */
-	g_ticket.rw = I2C_WRITE;
-	g_ticket.reg = 0x24; /* CTRL_REG5_G */
-	g_data = 0x80; /* Set reboot flag. */
-	a_done = 0;
-	g_done = 0;
-	add_ticket_i2c(&a_ticket);
-	add_ticket_i2c(&g_ticket);
-	while(I2C_BUSY == a_done || I2C_BUSY == g_done){
-		/* Wait for tickets to be processed. */
+	if(I2C_DONE != write_byte_i2c(IMU_ACCEL_ADDR, 0x1F, /* CTRL_REG0_XM */
+	               0x80)){ /* Set reboot flag. */
+		return -1; /* Bus error. */
 	}
-	if(I2C_DONE != a_done || I2C_DONE != g_done){
-		/* Bus error. */
-		return -1;
+	if(I2C_DONE != write_byte_i2c(IMU_GYRO_ADDR, 0x24, /* CTRL_REG5_G */
+	               0x80)){ /* Set reboot flag. */
+		return -1; /* Bus error. */
 	}
 	delay_ms(10); /* Give the device time to reset itself. */
 	
 	/* Enable FIFO */
-	a_ticket.rw = I2C_WRITE;
-	a_ticket.reg = 0x1F; /* CTRL_REG0_XM */
-	a_data = 0x40; /* Enable FIFO */
-	g_ticket.rw = I2C_WRITE;
-	g_ticket.reg = 0x24; /* CTRL_REG5_G */
-	/* TODO: Gyroscope: decide on range, output data selection (filters). */
-	g_data = 0x40; /* Enable FIFO */
-	a_done = 0;
-	g_done = 0;
-	add_ticket_i2c(&a_ticket);
-	add_ticket_i2c(&g_ticket);
-	while(I2C_BUSY == a_done || I2C_BUSY == g_done){
-		/* Wait for tickets to be processed. */
+	if(I2C_DONE != write_byte_i2c(IMU_ACCEL_ADDR, 0x1F, /* CTRL_REG0_XM */
+	               0x40)){ /* Enable FIFO */
+		return -1; /* Bus error. */
 	}
-	if(I2C_DONE != a_done || I2C_DONE != g_done){
-		/* Bus error. */
-		return -1;
+	if(I2C_DONE != write_byte_i2c(IMU_GYRO_ADDR, 0x24, /* CTRL_REG5_G */
+	               0x40)){ /* Enable FIFO */
+		return -1; /* Bus error. */
 	}
 
 	/* Setup FIFO modes. */
-	a_ticket.rw = I2C_WRITE;
-	a_ticket.reg = 0x2E; /* FIFO_CTRL_REG */
-	a_data = 0x5F; /* FIFO stream mode and watermark level=31 */
-	g_ticket.rw = I2C_WRITE;
-	g_ticket.reg = 0x2E; /* FIFO_CTRL_REG_G */
-	g_data = 0x5F; /* FIFO stream mode and watermark level=31 */
-	a_done = 0;
-	g_done = 0;
-	add_ticket_i2c(&a_ticket);
-	add_ticket_i2c(&g_ticket);
-	while(I2C_BUSY == a_done || I2C_BUSY == g_done){
-		/* Wait for tickets to be processed. */
+	if(I2C_DONE != write_byte_i2c(IMU_ACCEL_ADDR, 0x2E, /* FIFO_CTRL_REG */
+	               0x5F)){ /* FIFO stream mode and watermark level=31 */
+		return -1; /* Bus error. */
 	}
-	if(I2C_DONE != a_done || I2C_DONE != g_done){
-		/* Bus error. */
-		return -1;
+	if(I2C_DONE != write_byte_i2c(IMU_GYRO_ADDR, 0x2E, /* FIFO_CTRL_REG_G */
+	               0x5F)){ /* FIFO stream mode and watermark level=31 */
+		return -1; /* Bus error. */
 	}
 
 	/* Enable Magnetometer and Temperature sensor. */
-	a_ticket.rw = I2C_WRITE;
-	a_ticket.reg = 0x24; /* CTRL_REG5_XM */
-	a_data = 0xF4; /* Enable temp. sensor, magnetometer high resolution mode,
-	                * magnetometer ODR = 100Hz. */
-	a_done = 0;
-	add_ticket_i2c(&a_ticket);
-	while(I2C_BUSY == a_done){
-		/* Wait for ticket to be processed. */
-	}
-	if(I2C_DONE != a_done){
-		/* Bus error. */
-		return -1;
+	if(I2C_DONE != write_byte_i2c(IMU_ACCEL_ADDR, 0x24,   /* CTRL_REG5_XM */
+                       0xF4)){ /* Enable temp. sensor, magnetometer high resolution mode,
+		                * magnetometer ODR = 100Hz. */
+		return -1; /* Bus error. */
 	}
 
 	/* TODO: Try enabling BDU mode for the benefit of the magnetometer. */
