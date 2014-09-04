@@ -100,7 +100,7 @@ static void fetch_imu_gyro_data(void);
 static void fetch_imu_mag(void);
 static void fetch_finish(void);
 
-/* Get the number of data point in the IMU accelerometer's FIFO. */
+/* Get the number of data points in the IMU accelerometer's FIFO. */
 static void fetch_imu_accel_num(void){
 	Ticket.addr = IMU_ACCEL_ADDR;
 	Ticket.reg = 0x2F; /* FIFO_SRC_REG */
@@ -119,6 +119,9 @@ static void fetch_imu_accel_data(void){
 		FIFOOverrunIMU = true;
 	}
 	CurrentBuf->num_accel &= 0x1F;
+	if(CurrentBuf->num_accel > IMU_MAX_ACCEL_POINTS){
+		CurrentBuf->num_accel = IMU_MAX_ACCEL_POINTS;
+	}
 
 	Ticket.addr = IMU_ACCEL_ADDR;
 	Ticket.reg = 0xA8; /* OUT_X_L_A with auto-increment bit set */
@@ -147,6 +150,9 @@ static void fetch_imu_gyro_data(void){
 		FIFOOverrunIMU = true;
 	}
 	CurrentBuf->num_gyro &= 0x1F;
+	if(CurrentBuf->num_gyro > IMU_MAX_GYRO_POINTS){
+		CurrentBuf->num_gyro = IMU_MAX_GYRO_POINTS;
+	}
 	
 	Ticket.addr = IMU_GYRO_ADDR;
 	Ticket.reg = 0xA8; /* OUT_X_L_G with auto-increment bit set */
@@ -443,8 +449,7 @@ void start_imu(void){
 	start_stream_task();
 	
 	/* Start temperature update task. */
-	//TODO
-	//HousekeepingTasks[IMU_TEMP_HK_SLOT] = &update_imu_temp;
+	HousekeepingTasks[IMU_TEMP_HK_SLOT] = &update_imu_temp;
 }
 
 /* Shutdown the IMU data streaming task and put the IMU in a low-power state. */
