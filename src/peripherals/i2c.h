@@ -91,9 +91,18 @@ int add_ticket_i2c_w(uint8_t rw, uint8_t addr, uint8_t reg,
  * Returns:
  *   2 - I2C_ERROR
  *   1 - I2C_DONE
- *  -1 - NULL data field or ticket pointer.
  *  -2 - Conveyor is full. Please try again later. */
 int write_byte_i2c(uint8_t addr, uint8_t reg, uint8_t data);
+
+/* Add a ticket to read a single byte.
+ * This function will wait until the ticket is processed
+ * before returning. The return value indicates the result of the ticket.
+ * Returns:
+ *   2 - I2C_ERROR
+ *   1 - I2C_DONE
+ *  -1 - NULL data pointer.
+ *  -2 - Conveyor is full. Please try again later. */
+int read_byte_i2c(uint8_t addr, uint8_t reg, uint8_t *data);
 
 /* Setup the I2C1 peripheral. */
 void init_i2c(void);

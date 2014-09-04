@@ -312,13 +312,47 @@ int add_ticket_i2c_w(uint8_t rw, uint8_t addr, uint8_t reg,
  * Returns:
  *   2 - I2C_ERROR
  *   1 - I2C_DONE
- *  -1 - NULL data field or ticket pointer.
  *  -2 - Conveyor is full. Please try again later. */
 int write_byte_i2c(uint8_t addr, uint8_t reg, uint8_t data){
+	uint8_t done_flag = 0;
+	int r;
 	i2c_ticket_t ticket = {.rw = I2C_WRITE, .addr = addr, .reg = reg, .data = &data,
-	.size = 1, .done_flag = 0,
+	                       .size = 1, .done_flag = &done_flag,
+	                       .done_callback = 0, .at_time = 0};
+	r = add_ticket_i2c(&ticket);
+	if(r < 0){
+		return r;
+	} else {
+		while(0 == done_flag){
+			/* Wait for transaction to complete. */
+		}
+		return done_flag;
+	}
+}
+
+/* Add a ticket to read a single byte.
+ * This function will wait until the ticket is processed
+ * before returning. The return value indicates the result of the ticket.
+ * Returns:
+ *   2 - I2C_ERROR
+ *   1 - I2C_DONE
+ *  -1 - NULL data pointer.
+ *  -2 - Conveyor is full. Please try again later. */
+int read_byte_i2c(uint8_t addr, uint8_t reg, uint8_t *data){
+	uint8_t done_flag = 0;
+	int r;
+	i2c_ticket_t ticket = {.rw = I2C_READ, .addr = addr, .reg = reg, .data = data,
+	.size = 1, .done_flag = &done_flag,
 	.done_callback = 0, .at_time = 0};
-	return add_ticket_i2c(&ticket);
+	r = add_ticket_i2c(&ticket);
+	if(r < 0){
+		return r;
+	} else {
+		while(0 == done_flag){
+			/* Wait for transaction to complete. */
+		}
+		return done_flag;
+	}
 }
 
 /* Setup the I2C1 peripheral. */
