@@ -48,10 +48,12 @@ int main(void){
 	
 	if(TEST == mode){
 		/* Get data from the IMU without recording it to memory. */
-		uint32_t count;
+		uint32_t count = 0;
 		imu_data_t *data;
 		printf("Testing...\r\n");
 		fflush(stdout);
+
+		delay_ms(1000);
 
 		start_imu();
 		while(1){
@@ -59,6 +61,7 @@ int main(void){
 			release_buf_imu();
 			count++;
 			if((count % 10) == 0)led_toggle();
+			printf("%06d\n", count);
 		}
 	}
 
