@@ -34,6 +34,112 @@ void print_status_message(uint8_t status);
  * TODO: uC shutdown and button wakeup. */
 void shutdown_system(void);
 
+/* IMU test data acquisition helper functions. */
+void imu_test(){
+	/* Get data from the IMU without recording it to memory. */
+	uint32_t count = 0;
+	imu_data_t *data;
+	printf("Testing...\r\n");
+	fflush(stdout);
+	
+	delay_ms(1000);
+	
+	start_imu();
+	while(1){
+		while(NULL == (data = get_buf_imu()));
+	       release_buf_imu();
+	       count++;
+	       if((count % 10) == 0)led_toggle();
+	       printf("%06d\n", count);
+	}
+}
+
+void imu_erase(){
+	/* Erase Data. */
+	printf("#Erasing...\r\n");
+	erase_sector_mem(0);
+	erase_sector_mem(1);
+	delay_ms(time_remaining_mem());
+	printf("#Done.\r\n");
+}
+
+//if count == 0 run forever
+void imu_record(int count){
+	/* Record data to external flash. */
+	uint8_t buf[256];
+	uint32_t page = 0;
+	imu_data_t *data;
+	printf("#Recording...\r\n");
+	fflush(stdout);
+	start_imu();
+	if(0 == count){
+		count = 3000000;
+	}
+	while(page < count){
+		while(NULL == (data = get_buf_imu()));
+		memcpy(buf, data, sizeof(imu_data_t));
+		release_buf_imu();
+		/* Record error indicators. */
+		buf[sizeof(imu_data_t) + 0] = BufferOverrunIMU;
+		buf[sizeof(imu_data_t) + 1] = FIFOOverrunIMU;
+		buf[sizeof(imu_data_t) + 2] = BusErrorIMU;
+		buf[sizeof(imu_data_t) + 3] = BusTimeoutIMU;
+		/* Last byte of page is set to 0 to indicate that the page
+		* is filled. */
+		buf[255] = 0;
+		program_page_mem(page, buf);
+		page++;
+		if((page % 10) == 0)led_toggle();
+	}
+}
+
+void imu_playback(){
+	/* Read out data over USART. */
+	uint8_t buf[256];
+	imu_data_t *data = (imu_data_t *)buf;
+	uint32_t page = 0;
+	uint32_t a_sample = 0;
+	uint32_t g_sample = 0;
+	int i;
+	/* Output formats:
+	 *   Type Code (A, G, or M), Time (s), X, Y, Z, Temperature, Tip Switch State, Memory Page
+	 *  #BufferOverrunIMU=* FIFOOverrunIMU=* BusErrorIMU=* BusTimeoutIMU=*
+	 */
+	while(1){
+		read_mem(page << 8, buf, 256);
+		if(0 != buf[255]){
+			break;
+		}
+		/* Error Statuses */
+		printf("#BufferOverrunIMU=%d FIFOOverrunIMU=%d BusErrorIMU=%d BusTimeoutIMU=%d\r\n",
+		       buf[sizeof(imu_data_t) + 0], buf[sizeof(imu_data_t) + 1],
+		       buf[sizeof(imu_data_t) + 2], buf[sizeof(imu_data_t) + 3]);
+		delay_ms(1);
+		/* Magnetometer Data */
+		printf("M, %f, %d, %d, %d, %d, %d, %d\r\n",
+		       page * 0.01, data->mag.x, data->mag.y, data->mag.z,
+	 data->temperature, data->tip_pressed, page);
+		delay_ms(1);
+		/* Accelerometer Data */
+		for(i=0; i < data->num_accel; i++, a_sample++){
+			printf("A, %f, %d, %d, %d, %d, %d, %d\r\n",
+			       a_sample * 0.000625, data->accel[i].x, data->accel[i].y, data->accel[i].z,
+	  data->temperature, data->tip_pressed, page);
+			delay_ms(1);
+		}
+		/* Gyroscope Data */
+		for(i=0; i < data->num_gyro; i++, g_sample++){
+			printf("G, %f, %d, %d, %d, %d, %d, %d\r\n",
+			       (float) g_sample / 760, data->gyro[i].x, data->gyro[i].y, data->gyro[i].z,
+			       data->temperature, data->tip_pressed, page);
+			delay_ms(1);
+		}
+		page++;
+	}
+	printf("#Done at page %d.\r\n", page);
+	fflush(stdout);
+}
+
 int main(void){
 	uint8_t status;
 	status = init_system();
@@ -44,105 +150,21 @@ int main(void){
 	/* IMU data streaming test code.
 	 * The data rate is too fast for the USART, so the data is recorded to
 	 * the external flash memory and read out later. */
-	enum {ERASE, RECORD, PLAYBACK, TEST} mode = TEST;
-	
-	if(TEST == mode){
-		/* Get data from the IMU without recording it to memory. */
-		uint32_t count = 0;
-		imu_data_t *data;
-		printf("Testing...\r\n");
-		fflush(stdout);
+	enum {ERASE, RECORD, PLAYBACK, TEST, COMBO} mode = COMBO;
 
-		delay_ms(1000);
-
-		start_imu();
-		while(1){
-			while(NULL == (data = get_buf_imu()));
-			release_buf_imu();
-			count++;
-			if((count % 10) == 0)led_toggle();
-			printf("%06d\n", count);
-		}
-	}
-
-	else if(ERASE == mode){
-		/* Erase Data. */
-		printf("Erasing...\r\n");
-		erase_sector_mem(0);
-		erase_sector_mem(1);
-		delay_ms(time_remaining_mem());
-		printf("Done.\r\n");
-	}
-
-	else if(RECORD == mode){
-		/* Record data to external flash. */
-		uint8_t buf[256];
-		uint32_t page = 0;
-		imu_data_t *data;
-		printf("Recording...\r\n");
-		fflush(stdout);
-		start_imu();
-		while(1){
-			while(NULL == (data = get_buf_imu()));
-			memcpy(buf, data, sizeof(imu_data_t));
-			release_buf_imu();
-			/* Record error indicators. */
-			buf[sizeof(imu_data_t) + 0] = BufferOverrunIMU;
-			buf[sizeof(imu_data_t) + 1] = FIFOOverrunIMU;
-			buf[sizeof(imu_data_t) + 2] = BusErrorIMU;
-			buf[sizeof(imu_data_t) + 3] = BusTimeoutIMU;
-			/* Last byte of page is set to 0 to indicate that the page
-			* is filled. */
-			buf[255] = 0;
-			program_page_mem(page, buf);
-			page++;
-			if((page % 30) == 0)led_toggle();
-		}
+	if(COMBO == mode){
+		/* Record data for 1s and read it out. */
+		imu_erase();
+		imu_record(100);
+		imu_playback();
+	} else if(TEST == mode){
+		imu_test();
+	} else if(ERASE == mode){
+		imu_erase();
+	} else if(RECORD == mode){
+		imu_record(0);
 	} else if(mode == PLAYBACK){
-		/* Read out data over USART. */
-		uint8_t buf[256];
-		imu_data_t *data = (imu_data_t *)buf;
-		uint32_t page = 0;
-		uint32_t a_sample = 0;
-		uint32_t g_sample = 0;
-		int i;
-		/* Output formats:
-		*   Type Code (A, G, or M), Time (s), X, Y, Z, Temperature, Tip Switch State, Memory Page
-		*  #BufferOverrunIMU=* FIFOOverrunIMU=* BusErrorIMU=* BusTimeoutIMU=*
-		*/
-		while(1){
-			read_mem(page << 8, buf, 256);
-			if(0 != buf[255]){
-				break;
-			}
-			/* Error Statuses */
-			printf("#BufferOverrunIMU=%d FIFOOverrunIMU=%d BusErrorIMU=%d BusTimeoutIMU=%d\r\n",
-			        buf[sizeof(imu_data_t) + 0], buf[sizeof(imu_data_t) + 1],
-			        buf[sizeof(imu_data_t) + 2], buf[sizeof(imu_data_t) + 3]);
-			delay_ms(1);
-			/* Magnetometer Data */
-			printf("M, %f, %d, %d, %d, %d, %d, %d\r\n",
-			       page * 0.01, data->mag.x, data->mag.y, data->mag.z,
-			       data->temperature, data->tip_pressed, page);
-			delay_ms(1);
-			/* Accelerometer Data */
-			for(i=0; i < data->num_accel; i++, a_sample++){
-				printf("A, %f, %d, %d, %d, %d, %d, %d\r\n",
-				       a_sample * 0.000625, data->accel[i].x, data->accel[i].y, data->accel[i].z,
-				       data->temperature, data->tip_pressed, page);
-				delay_ms(1);
-			}
-			/* Gyroscope Data */
-			for(i=0; i < data->num_gyro; i++, g_sample++){
-				printf("G, %f, %d, %d, %d, %d, %d, %d\r\n",
-				       (float) g_sample / 760, data->gyro[i].x, data->gyro[i].y, data->gyro[i].z,
-				       data->temperature, data->tip_pressed, page);
-				delay_ms(1);
-			}
-			page++;
-		}
-		printf("#Done at page %d.\r\n", page);
-		fflush(stdout);
+		imu_playback();
 	}
 	while(1);
 		
