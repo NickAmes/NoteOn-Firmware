@@ -34,10 +34,6 @@ void print_status_message(uint8_t status);
  * TODO: uC shutdown and button wakeup. */
 void shutdown_system(void);
 
-//TODO
-bool DebugDone;
-#include <libopencm3/stm32/dma.h>
-
 int main(void){
 	uint8_t status;
 	status = init_system();
@@ -56,19 +52,13 @@ int main(void){
 		imu_data_t *data;
 		printf("Testing...\r\n");
 		fflush(stdout);
-		
-		//TODO
-		GPIOA_BSRR = GPIO11;
-		gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO11);
 
 		start_imu();
-		delay_ms(100);
-		led_off();
 		while(1){
 			while(NULL == (data = get_buf_imu()));
 			release_buf_imu();
 			count++;
-			if((count % 30) == 0)led_toggle();
+			if((count % 10) == 0)led_toggle();
 		}
 	}
 
