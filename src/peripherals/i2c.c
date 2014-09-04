@@ -290,7 +290,7 @@ int add_ticket_i2c_f(uint8_t rw, uint8_t addr, uint8_t reg,
 int add_ticket_i2c_w(uint8_t rw, uint8_t addr, uint8_t reg,
 		     volatile void *data, uint8_t size,
 		     volatile uint32_t *at_time){
-	uint8_t done_flag = 0;
+	volatile uint8_t done_flag = 0;
 	int r;
 	i2c_ticket_t ticket = {.rw = rw, .addr = addr, .reg = reg, .data = data,
 	                       .size = size, .done_flag = &done_flag,
@@ -314,7 +314,7 @@ int add_ticket_i2c_w(uint8_t rw, uint8_t addr, uint8_t reg,
  *   1 - I2C_DONE
  *  -2 - Conveyor is full. Please try again later. */
 int write_byte_i2c(uint8_t addr, uint8_t reg, uint8_t data){
-	uint8_t done_flag = 0;
+	volatile uint8_t done_flag = 0;
 	int r;
 	i2c_ticket_t ticket = {.rw = I2C_WRITE, .addr = addr, .reg = reg, .data = &data,
 	                       .size = 1, .done_flag = &done_flag,
@@ -339,7 +339,7 @@ int write_byte_i2c(uint8_t addr, uint8_t reg, uint8_t data){
  *  -1 - NULL data pointer.
  *  -2 - Conveyor is full. Please try again later. */
 int read_byte_i2c(uint8_t addr, uint8_t reg, uint8_t *data){
-	uint8_t done_flag = 0;
+	volatile uint8_t done_flag = 0;
 	int r;
 	i2c_ticket_t ticket = {.rw = I2C_READ, .addr = addr, .reg = reg, .data = data,
 	.size = 1, .done_flag = &done_flag,
