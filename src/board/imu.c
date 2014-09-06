@@ -1,6 +1,7 @@
-/* LSM9DS0TR 9-axis IMU driver.
- * This file provides a high-level interface to the IMU, including a timer-based
- * (TIM1) task that automatically streams data from the sensor.
+/* LSM9DS0TR 9-axis IMU and LIS3DSHTR 3-axis auxiliary accelerometer driver.
+ * This file provides a high-level interface to the IMU and auxiliary
+ * accelerometer, including a timer-based (TIM1) task that automatically
+ * streams data from the sensor.
  *
  * This file is a part of the firmware for the NoteOn Smartpen.
  * Copyright 2014 Nick Ames <nick@fetchmodus.org>. Licensed under the GNU GPLv3.
@@ -16,20 +17,21 @@
 #include <libopencm3/stm32/timer.h>
 #include <math.h>
 
-//TODO
-#include "../peripherals/usart.h"
+/* TODO:
+ * -Add aux. accel init function */
 
 /* I2C address of LSM9DS0TR accelerometer with SDO_XM high. */
 #define IMU_ACCEL_ADDR 0x1D
 /* I2C address of LSM9DS0TR gyroscope with SDO_G high. */
 #define IMU_GYRO_ADDR 0x6B
+/* I2C address of LIS3DSHTR aux. accelerometer with SEL low. */
+#define AUX_ACCEL_ADDR 0x1E
 
 /* Current Temperature of IMU. This is the raw value from the IMU.
  * If no data is available, it will be set to 0xFFFF. */
-int16_t IMUTemperature;
+int16_t IMUTemperature = 0xFFFF;
 
-/* Current Temperature of IMU, in degrees Celsius. If data is unavailable,
- * it will be set to NaN. */
+/* Retrieve current temperature of IMU. */
 static void update_imu_temp(void){
 	static volatile uint8_t done_h, done_l, tempdata[2];
 	i2c_ticket_t ticket;
@@ -101,6 +103,8 @@ static void fetch_imu_accel_data(void);
 static void fetch_imu_gyro_num(void);
 static void fetch_imu_gyro_data(void);
 static void fetch_imu_mag(void);
+static void fetch_aux_accel_num(void);
+static void fetch_aux_accel_data(void);
 static void fetch_finish(void);
 
 /* Get the number of data points in the IMU accelerometer's FIFO. */
@@ -122,8 +126,8 @@ static void fetch_imu_accel_data(void){
 		FIFOOverrunIMU = true;
 	}
 	CurrentBuf->num_accel &= 0x1F;
-	if(CurrentBuf->num_accel > IMU_MAX_ACCEL_POINTS){
-		CurrentBuf->num_accel = IMU_MAX_ACCEL_POINTS;
+	if(CurrentBuf->num_accel > MAX_IMU_ACCEL_POINTS){
+		CurrentBuf->num_accel = MAX_IMU_ACCEL_POINTS;
 	}
 
 	Ticket.addr = IMU_ACCEL_ADDR;
@@ -153,8 +157,8 @@ static void fetch_imu_gyro_data(void){
 		FIFOOverrunIMU = true;
 	}
 	CurrentBuf->num_gyro &= 0x1F;
-	if(CurrentBuf->num_gyro > IMU_MAX_GYRO_POINTS){
-		CurrentBuf->num_gyro = IMU_MAX_GYRO_POINTS;
+	if(CurrentBuf->num_gyro > MAX_IMU_GYRO_POINTS){
+		CurrentBuf->num_gyro = MAX_IMU_GYRO_POINTS;
 	}
 	
 	Ticket.addr = IMU_GYRO_ADDR;
@@ -171,8 +175,39 @@ static void fetch_imu_mag(void){
 	Ticket.reg = 0x88; /* OUT_X_L_M with auto-increment bit set */
 	Ticket.data = &CurrentBuf->mag;
 	Ticket.size = sizeof(vec3_t);
-	Ticket.done_callback = &fetch_finish;
+	Ticket.done_callback = &fetch_aux_accel_num;
 	Ticket.at_time = &CurrentBuf->mag_time;
+	add_ticket_i2c((i2c_ticket_t *)&Ticket);
+}
+
+/* Get the number of data points in the aux. accelerometer's FIFO. */
+static void fetch_aux_accel_num(void){
+	Ticket.addr = AUX_ACCEL_ADDR;
+	Ticket.reg = 0x2F; /* FIFO_SRC */
+	Ticket.data = &CurrentBuf->num_aux; /* NOTE: The number of points in the
+	                                     * FIFO will need to be extracted from
+					     * the register data. */
+	Ticket.size = 1;
+	Ticket.done_callback = &fetch_aux_accel_data;
+	add_ticket_i2c((i2c_ticket_t *)&Ticket);
+}
+
+/* Get data points from the aux. accelerometer's FIFO. */
+static void fetch_aux_accel_data(void){
+	/* Extract number of points in FIFO from FIFO_SRC. */
+	if(CurrentBuf->num_aux & 0x40){ /* OVRN bit. */
+		FIFOOverrunIMU = true;
+	}
+	CurrentBuf->num_aux &= 0x1F;
+	if(CurrentBuf->num_aux > MAX_IMU_ACCEL_POINTS){
+		CurrentBuf->num_aux = MAX_IMU_ACCEL_POINTS;
+	}
+
+	Ticket.addr = AUX_ACCEL_ADDR;
+	Ticket.reg = 0x28; /* OUT_X_L */
+	Ticket.data = &CurrentBuf->aux;
+	Ticket.size = CurrentBuf->num_aux * sizeof(vec3_t);
+	Ticket.done_callback = &fetch_finish;
 	add_ticket_i2c((i2c_ticket_t *)&Ticket);
 }
 
@@ -284,8 +319,8 @@ void release_buf_imu(void){
 	}
 }
 
-/* Initialize the IMU. start_task_imu() must be called after this function
- * to synchronize the IMU and start the data streaming task.
+/* Initialize the LSM9DS0TR IMU. start_imu() must be called after this function
+ * to synchronize the IMU and aux. accelerometer and start the data streaming task.
  * Returns 0 on success, -1 on error. */
 int init_imu(void){
 	/* Test that the accelerometer and gyroscope are responding. */
@@ -345,60 +380,83 @@ int init_imu(void){
 	}
 
 	/* TODO: Try enabling BDU mode for the benefit of the magnetometer. */
-
+	/* TODO: Filter settings. */
 	return 0;
 }
 
-/* Synchronize the IMU and start the data streaming and temperature update
- * tasks. */
-void start_imu(void){
-	i2c_ticket_t a_ticket, g_ticket;
-	volatile uint8_t a_done, g_done;
-	volatile uint8_t a_data, g_data;
-	
-	a_ticket.addr = IMU_ACCEL_ADDR; /* LSM9DS0TR accelerometer I2C address with SDO_XM high. */
-	a_ticket.done_flag = &a_done;
-	a_ticket.at_time = 0;
-	a_ticket.done_callback = 0;
-	a_ticket.data = &a_data;
-	a_ticket.size = 1;
-	
-	g_ticket.addr = IMU_GYRO_ADDR; /* LSM9DS0TR gyroscope I2C address with SDO_G high. */
-	g_ticket.done_flag = &g_done;
-	g_ticket.at_time = 0;
-	g_ticket.done_callback = 0;
-	g_ticket.data = &g_data;
-	g_ticket.size = 1;
+/* Initialize the LIS3DSHTR auxiliary accelerometer. start_imu() must be called
+ * after this function to synchronize the IMU and aux. accelerometer and start
+ * the data streaming task.
+ * Returns 0 on success, -1 on error. */
+int init_aux_accel(void){
+	/* Check that the axillary accelerometer is responding. */
+	uint8_t a_data;
+	if(I2C_DONE != read_byte_i2c(AUX_ACCEL_ADDR, 0x0F, /* WHO_AM_I */
+	               &a_data)){
+		return -1; /* Bus error. */
+	}
+	if(0x3F != a_data){
+		/* Incorrect WHO_AM_I values. */
+		return -1;
+	}
 
-	/* Set ODR and bring IMU out of sleep mode.
+	/* Soft reset. */
+	if(I2C_DONE != write_byte_i2c(AUX_ACCEL_ADDR, 0x25, /* CTRL_REG6 */
+	               0x80)){ /* Set reboot flag. */
+		return -1; /* Bus error. */
+	}
+	delay_ms(10); /* Give the device time to reset itself. */
+
+	/* Enable FIFO and address auto-increment. */
+	if(I2C_DONE != write_byte_i2c(AUX_ACCEL_ADDR, 0x25, /* CTRL_REG6 */
+	               0x50)){ /* Set FIFO and address auto-increment bits. */
+		return -1; /* Bus error. */
+	}
+	
+	/* Setup FIFO modes. */
+	if(I2C_DONE != write_byte_i2c(AUX_ACCEL_ADDR, 0x2E, /* FIFO_CTRL */
+	               0x5F)){ /* FIFO stream mode and watermark level=31 */
+		return -1; /* Bus error. */
+	}
+
+	return 0;
+}
+	
+/* Synchronize the IMU and aux. accelerometer and start the data streaming
+ * and temperature update tasks. */
+void start_imu(void){
+	/* Set ODR and bring IMU and aux. accelerometer out of sleep mode.
 	 * This is the critical step that synchronizes the outputs of the
-	 * accelerometer and gyroscope. */
-	a_ticket.rw = I2C_WRITE;
-	a_ticket.reg = 0x20; /* CTRL_REG1_XM */
+	 * accelerometers and gyroscope. */
+	volatile uint8_t a_done = 0, g_done = 0, aux_done = 0;
+	uint8_t a_data, g_data, aux_data;
 	a_data = 0xA7; /* 1600Hz ODR and enable all axises. */
-	g_ticket.rw = I2C_WRITE;
-	g_ticket.reg = 0x20; /* CTRL_REG1_G */
 	g_data = 0xFF; /* 760Hz ODR, 100Hz BW, power up, and enable all axises. */
-	a_done = 0;
-	g_done = 0;
-	add_ticket_i2c(&a_ticket);
-	add_ticket_i2c(&g_ticket);
-	while(I2C_BUSY == a_done || I2C_BUSY == g_done){
+	aux_data = 0x97; /* 1600Hz ODR and enable all axises. */
+	add_ticket_i2c_f(I2C_WRITE, IMU_ACCEL_ADDR, 0x20, /* CTRL_REG1_XM */
+			 &a_data, 1, &a_done, NULL, NULL);
+	add_ticket_i2c_f(I2C_WRITE, AUX_ACCEL_ADDR, 0x20, /* CTRL_REG4 */
+			 &aux_data, 1, &aux_done, NULL, NULL);
+	add_ticket_i2c_f(I2C_WRITE, IMU_GYRO_ADDR, 0x20, /* CTRL_REG1_G */
+			 &g_data, 1, &g_done, NULL, NULL);
+
+	while(I2C_BUSY == a_done || I2C_BUSY == g_done || I2C_BUSY == aux_done){
 		/* Wait for tickets to be processed. */
 	}
-	if(I2C_DONE != a_done || I2C_DONE != g_done){
+	if(I2C_DONE != a_done || I2C_DONE != g_done || I2C_DONE != aux_done){
 		/* Bus error. */
 		BusErrorIMU = true;
 		return;
 	}
-	
+
 	start_stream_task();
-	
+
 	/* Start temperature update task. */
 	HousekeepingTasks[IMU_TEMP_HK_SLOT] = &update_imu_temp;
 }
 
-/* Shutdown the IMU data streaming task and put the IMU in a low-power state. */
+/* Shutdown the IMU data streaming task and put the IMU and aux. accelerometer
+ * in a low-power state. */
 void shutdown_imu(void){
 	/* Disable temperature sensing housekeeping task. */
 	HousekeepingTasks[IMU_TEMP_HK_SLOT] = 0;
@@ -407,4 +465,5 @@ void shutdown_imu(void){
 	nvic_disable_irq(NVIC_TIM1_UP_TIM16_IRQ);
 
 	/* TODO: Put the IMU in a low-power state. */
+	/* TODO: Put the aux. accel in a low-power state. */
 }
