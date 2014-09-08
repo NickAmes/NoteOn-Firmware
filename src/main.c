@@ -35,7 +35,7 @@ void print_status_message(uint8_t status);
 void shutdown_system(void);
 
 /* IMU test data acquisition helper functions. */
-void imu_test(){
+static void imu_test(void){
 	/* Get data from the IMU without recording it to memory. */
 	uint32_t count = 0;
 	imu_data_t *data;
@@ -57,17 +57,18 @@ void imu_test(){
 	}
 }
 
-void imu_erase(){
+static void imu_erase(void){
 	/* Erase Data. */
 	printf("#Erasing...\r\n");
 	erase_sector_mem(0);
+	delay_ms(time_remaining_mem());
 	erase_sector_mem(1);
 	delay_ms(time_remaining_mem());
 	printf("#Done.\r\n");
 }
 
 //if count == 0 run forever
-void imu_record(int count){
+static void imu_record(int count){
 	/* Record data to external flash. */
 	uint8_t buf[512];
 	uint32_t page = 0;
@@ -97,7 +98,7 @@ void imu_record(int count){
 	}
 }
 
-void imu_playback(){
+static void imu_playback(void){
 	/* Read out data over USART. */
 	uint8_t buf[512];
 	imu_data_t *data = (imu_data_t *)buf;

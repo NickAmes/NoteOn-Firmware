@@ -464,6 +464,16 @@ void shutdown_imu(void){
 	/* Stop data stream task. */
 	nvic_disable_irq(NVIC_TIM1_UP_TIM16_IRQ);
 
-	/* TODO: Put the IMU in a low-power state. */
-	/* TODO: Put the aux. accel in a low-power state. */
+	/* Shutdown power to the data stream task timer. */
+	rcc_periph_clock_disable(RCC_TIM1);
+
+	/* Put the IMU into power-down mode. */
+	write_byte_i2c(IMU_ACCEL_ADDR, 0x20, /* CTRL_REG1_XM */
+		       0x00); /* Power-down mode. */
+	write_byte_i2c(IMU_GYRO_ADDR,  0x20, /* CTRL_REG1_G */
+		       0x00); /* Power-down mode. */
+
+	/* Put the auxiliary accelerometer into power-down mode. */
+	write_byte_i2c(AUX_ACCEL_ADDR, 0x20, /* CTRL_REG4 */
+		       0x00); /* Power-down mode. */
 }
