@@ -159,6 +159,33 @@ int main(void){
 	print_status_message(status);
 
 	led_on();
+	
+	/* Bluetooth test code. */
+	/* TODO: REQn and RDYn macros. */
+	gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, GPIO0); /* RDYn */
+	GPIOA_BSRR = GPIO7;
+	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO7); /* REQNn */
+	//setup_spi(0, 0, SPI_CR1_BAUDRATE_FPCLK_DIV_16, SPI_CR1_LSBFIRST);
+	setup_spi(0, 0, SPI_CR1_BAUDRATE_FPCLK_DIV_256, SPI_CR1_LSBFIRST);
+	//TODO
+	write_str("Waiting for RDYn to be low... ");
+	GPIOA_BSRR = (GPIO7 << 16);
+	while(GPIOB_IDR &= GPIO0){
+		/* Wait to for RDYn to be low. */
+	}
+	write_str("RDYn is low.\r\n");
+	uint8_t buf[34];
+	rx_spi(buf, 34);
+	GPIOA_BSRR = GPIO7;
+	printf("Data received: ");
+	for(int i=0;i<34;i++){
+		printf("0x%02X ", buf[i]);
+	}
+	printf("\r\n");
+	fflush(stdout);
+	while(1);
+	
+	
 
 	/* IMU driver test code.
 	 * The data rate is too fast for the USART, so the data is recorded to

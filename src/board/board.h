@@ -11,5 +11,6 @@
 #include "battery.h"
 #include "memory.h"
 #include "imu.h"
+#include "bluetooth.h"
 
 #endif 
