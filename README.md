@@ -10,10 +10,10 @@ Drivers for all peripherals except the Bluetooth transceiver have been completed
 
 Required Software
 -----------------
--libopencm3 (included as git module) https://github.com/libopencm3/libopencm3
--gcc-arm-embedded: https://launchpad.net/gcc-arm-embedded
--STM32Flash (patched for STM32F302x8): https://github.com/NickAmes/STM32Flash
- (dfu-util may also work, but I haven't tested it.)
+- libopencm3 (included as git module) https://github.com/libopencm3/libopencm3
+- gcc-arm-embedded: https://launchpad.net/gcc-arm-embedded
+- STM32Flash (patched for STM32F302x8): https://github.com/NickAmes/STM32Flash
+  (dfu-util may also work, but I haven't tested it.)
 
 Source File Layout
 ------------------
