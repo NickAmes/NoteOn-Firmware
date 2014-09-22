@@ -91,6 +91,12 @@ static void get_spi(void){
 	setup_spi(0, 0, SPI_CR1_BAUDRATE_FPCLK_DIV_2, SPI_CR1_MSBFIRST);
 }
 
+/* Release the SPI bus and set GotSPI to 0. */
+static void release_spi_mem(void){
+	GotSPI = false;
+	release_spi();
+}
+
 /* Wait until an internal chip write operation has completed.
  * This function assumes that SPI bus has already been set up. */
 static void wait_chip_busy(void){
@@ -141,7 +147,7 @@ int init_memory(void){
 
 	if(0 != memcmp(id, correct_mem_id, 3)){
 		/* Incorrect ID. */
-		release_spi();
+		release_spi_mem();
 		GotSPI = false;
 		return -1;
 	}
@@ -169,7 +175,7 @@ int init_memory(void){
 	ss_high();
 
 	/* TODO: Optimize driver strength and increase SPI speed. */
-	release_spi();
+	release_spi_mem();
 	GotSPI = false;
 	return 0;
 
@@ -183,7 +189,7 @@ int init_memory(void){
 void shutdown_memory(void){
 	get_spi();
 	wait_chip_busy();
-	release_spi();
+	release_spi_mem();
 	GotSPI = false;
 	/* The suspend mode is in effect whenever SS is high. */
 	/* TODO: Ensure SS remains high when the uC is in sleep. */
@@ -259,7 +265,7 @@ void read_mem(uint32_t address, uint8_t *data, uint32_t size){
 		while(spi_is_busy());
 		ss_high();
 	}
-	release_spi();
+	release_spi_mem();
 	GotSPI = false;
 	CompletionTime = 0;
 }	
@@ -288,7 +294,7 @@ void program_page_mem(uint32_t page, const uint8_t *data){
 	while(spi_is_busy());
 	ss_high();
 
-	release_spi();
+	release_spi_mem();
 	GotSPI = false;
 	CompletionTime = SystemTime + 5;
 }
@@ -314,7 +320,7 @@ void erase_sector_mem(uint16_t sector){
 	while(spi_is_busy());
 	ss_high();
 
-	release_spi();
+	release_spi_mem();
 	GotSPI = false;
 	CompletionTime = SystemTime + 3000;
 }
@@ -339,7 +345,7 @@ void erase_subsector_mem(uint32_t subsector){
 	while(spi_is_busy());
 	ss_high();
 	
-	release_spi();
+	release_spi_mem();
 	GotSPI = false;
 	CompletionTime = SystemTime + 800;
 }
@@ -372,7 +378,7 @@ void erase_die_mem(uint8_t die){
 	while(spi_is_busy());
 	ss_high();
 	
-	release_spi();
+	release_spi_mem();
 	GotSPI = false;
 	CompletionTime = SystemTime + 480000;
 }
