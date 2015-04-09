@@ -20,7 +20,7 @@
 #define ss_low() (GPIOA_BSRR |= (GPIO6 << 16))
 
 /* If true, the memory driver has control of the SPI peripheral. */
-static bool GotSPI;
+static volatile bool GotSPI;
 
 /* request_spi() callback. Simply sets GotSPI to true. */
 static void request_spi_callback(void){
