@@ -17,9 +17,6 @@
 #include <libopencm3/stm32/timer.h>
 #include <math.h>
 
-/* TODO:
- * -Add aux. accel init function */
-
 /* I2C address of LSM9DS0TR accelerometer with SDO_XM high. */
 #define IMU_ACCEL_ADDR 0x1D
 /* I2C address of LSM9DS0TR gyroscope with SDO_G high. */
